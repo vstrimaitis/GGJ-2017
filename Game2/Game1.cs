@@ -11,15 +11,17 @@ namespace Game2
     /// </summary>
     public class Game1 : Game
     {
+        const float WorldRotationSpeed = 1 / 120f;
+        const float Gravity = 100f;
+        const float PlayerHorizontalSpeed = 0.9f;
+        const float PlayerJumpSpeed = 1.5f;
+        float _worldAngle = 0;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        public static int PixelSize { get; private set; } = 5;
         int _width;
         int _height;
-        Texture2D _earth;
         World _world = new World();
-
-        float time;
 
         public Game1()
         {
@@ -54,21 +56,16 @@ namespace Game2
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            _earth = Content.Load<Texture2D>("earth");
-            var colors = new Color[_earth.Width, _earth.Height];
-            var colors1D = new Color[_earth.Width * _earth.Height];
-            _earth.GetData(colors1D);
-            
-            for (int x = 0; x < _earth.Width; x++)
+            var earth = Content.Load<Texture2D>("earth");
+            var colors1D = new Color[earth.Width * earth.Height];
+            earth.GetData(colors1D);
+            for (int x = 0; x < earth.Width; x++)
             {
-                for (int y = 0; y < _earth.Height; y++)
+                for (int y = 0; y < earth.Height; y++)
                 {
-                    var c = colors1D[x + y * _earth.Width]; ;
+                    var c = colors1D[x + y * earth.Width]; ;
                     if(c.A != 0)
-                    {
-                        _world.Blocks.Add(new Block(x - _earth.Width/2, y - _earth.Height/2, BlockType.Ground, c));
-                    }
-                    //colors[x, y] = colors1D[x + y * _earth.Width];
+                        _world.Blocks.Add(new Block(x - earth.Width/2, y - earth.Height/2, BlockType.Ground, c));
                 }
             }
             // TODO: use this.Content to load your game content here
@@ -94,22 +91,32 @@ namespace Game2
                 Exit();
 
             // TODO: Add your update logic here
-            time += 1 / 60f;
+            _worldAngle += WorldRotationSpeed;
             var state = Keyboard.GetState();
-            var speed = 1f;
-
-            if (state.IsKeyDown(Keys.Left))
+            
+            if (state.IsKeyDown(Keys.Left) && _world.Player.IsOnGround)
             {
                 var v = _world.Player.Position;
                 var vv = new Vector2(v.Y, -v.X);
-                _world.Player.Position += vv / vv.Length() * speed;
+                _world.Player.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
             }
-            if (state.IsKeyDown(Keys.Right))
+            else if (state.IsKeyDown(Keys.Right) && _world.Player.IsOnGround)
             {
                 var v = _world.Player.Position;
                 var vv = new Vector2(-v.Y, v.X);
-                _world.Player.Position += vv / vv.Length() * speed;
+                _world.Player.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
             }
+            if (state.IsKeyDown(Keys.Up) && _world.Player.IsOnGround)
+            {
+                _world.Player.Velocity += _world.Player.Position / _world.Player.Position.Length() * PlayerJumpSpeed;
+            }
+
+            //_world.Player.Velocity -= _world.Player.Position * Gravity;
+            var g = -_world.Player.Position;
+            g.Normalize();
+            g *= (Gravity / _world.Player.Position.LengthSquared());
+            _world.Player.Velocity += g;
+            _world.Player.Update();
 
             base.Update(gameTime);
         }
@@ -123,7 +130,7 @@ namespace Game2
             GraphicsDevice.Clear(Color.Black);
 
             // TODO: Add your drawing code here
-            spriteBatch.Begin(transformMatrix: Matrix.CreateRotationZ(time)*Matrix.CreateTranslation(_width/2, _height/2, 0));
+            spriteBatch.Begin(transformMatrix: Matrix.CreateRotationZ(_worldAngle) *Matrix.CreateTranslation(_width/2, _height/2, 0));
             
             foreach (var b in _world.Blocks)
             {

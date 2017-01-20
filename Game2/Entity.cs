@@ -9,6 +9,7 @@ namespace Game2
         public Vector2 Position;
         public Vector2 Size;
         public Vector2 Velocity;
+        public bool IsOnGround { get; private set; }
 
         public Entity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
         {
@@ -24,16 +25,44 @@ namespace Game2
             sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), Color.Red);
         }
 
-        public bool IsInBlock
+        private bool IsInBlock(Vector2 point)
         {
-            get
+            foreach (var b in World.Blocks)
             {
-                foreach(var b in World.Blocks)
+                if (b.Contains(point))
+                    return true;
+            }
+            return false;
+        }
+
+        private void PushOut()
+        {
+            float min = 1f, max = 1000f;
+            for(int i = 0; i < 100; i++)
+            {
+                float mid = (min + max) / 2;
+                var newPos = Position * mid;
+                if (IsInBlock(newPos))
                 {
-                    if (b.Contains(Position))
-                        return true;
+                    min = mid;
                 }
-                return false;
+                else
+                {
+                    max = mid;
+                }
+            }
+            Position *= (min + max) / 2;
+        }
+
+        public void Update()
+        {
+            IsOnGround = false;
+            Position += Velocity;
+            if (IsInBlock(Position))
+            {
+                PushOut();
+                IsOnGround = true;
+                Velocity = Vector2.Zero;
             }
         }
 
