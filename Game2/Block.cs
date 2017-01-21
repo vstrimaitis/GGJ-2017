@@ -6,6 +6,8 @@ namespace Game2
     enum BlockType
     {
         Ground,
+        Player,
+        Star
     }
 
     class Block
@@ -14,6 +16,14 @@ namespace Game2
         public BlockType Type { get; private set; }
         public Color Color { get; private set; }
         public Vector2 Position { get; private set; }
+
+        public Rectangle BoundingBox
+        {
+            get
+            {
+                return new Rectangle((int)Position.X, (int)Position.Y, Size, Size);
+            }
+        }
 
         public Block(int x, int y, int size, BlockType type, Color color)
         {
@@ -27,10 +37,10 @@ namespace Game2
         {
             var color = Color;
             if (!modifyAlpha)
-                color = Graphics.Modify(color, dist);
+                color = Resources.Modify(color, dist);
             else
-                color = Graphics.ModifyAlpha(color, dist);
-            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), color);
+                color = Resources.ModifyAlpha(color, dist);
+            sb.Draw(Resources.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), color);
         }
 
         public bool Contains(Vector2 p)

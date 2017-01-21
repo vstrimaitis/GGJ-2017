@@ -1,12 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace Game2
 {
     class PlayerEntity
     {
-        const int BlockSize = Game1.PlanetBlockSize;
+        public const int BlockSize = Game1.PlanetBlockSize;
         const float ChargeSpeed = 1 / 20f;
         const float DischargeSpeed = 1 / 10f;
         public World World { get; }
@@ -16,7 +17,15 @@ namespace Game2
         public bool IsOnGround { get; private set; }
         public float Power { get; private set; } = 100;
 
-        public EventHandler OnDeath;
+        public event EventHandler OnDeath;
+
+        public Rectangle BoundingBox
+        {
+            get
+            {
+                return new Rectangle((int)Position.X, (int)Position.Y, BlockSize, BlockSize);
+            }
+        }
 
         public PlayerEntity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
         {
@@ -31,10 +40,10 @@ namespace Game2
         {
             var rect = new Rectangle((int)(Position.X * BlockSize), (int)(Position.Y * BlockSize), (int)(Size.X * BlockSize), (int)(Size.Y * BlockSize));
             float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
-            sb.Draw(Graphics.Player, rect, null, Color.White, angle, new Vector2(Graphics.Player.Width/2, Graphics.Player.Height), SpriteEffects.None, 0);
+            sb.Draw(Resources.Player, rect, null, Color.White, angle, new Vector2(Resources.Player.Width/2, Resources.Player.Height), SpriteEffects.None, 0);
 
-            var color = Graphics.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
-            sb.Draw(Graphics.PlayerHat, rect, null, color, angle, new Vector2(Graphics.Player.Width / 2, Graphics.Player.Height), SpriteEffects.None, 0);
+            var color = Resources.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
+            sb.Draw(Resources.PlayerHat, rect, null, color, angle, new Vector2(Resources.Player.Width / 2, Resources.Player.Height), SpriteEffects.None, 0);
         }
 
         private bool IsInBlock(Vector2 point)

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
 
@@ -50,15 +52,22 @@ namespace Game2
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            Graphics.Pixel = new Texture2D(GraphicsDevice, 1, 1);
-            Graphics.Pixel.SetData(new Color[] { Color.White });
+            Resources.Pixel = new Texture2D(GraphicsDevice, 1, 1);
+            Resources.Pixel.SetData(new Color[] { Color.White });
 
             //_world.Entities.Add(new Entity(Vector2.Zero, new Vector2(1, 1), Vector2.Zero, _world));
             _world.Player = new PlayerEntity(-Vector2.UnitY * 25, Vector2.Zero, _world);
             _world.Player.OnDeath += (sender, args) =>
             {
+                MediaPlayer.Stop();
                 System.Windows.Forms.MessageBox.Show("You ded man ;(");
                 this.Exit();
+            };
+
+            Star.OnCollision += (sender, args) =>
+            {
+                var hitStar = sender as Star;
+                Console.WriteLine("hit");
             };
             base.Initialize();
         }
@@ -71,13 +80,17 @@ namespace Game2
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            Graphics.Planet = Content.Load<Texture2D>("planet");
-            Graphics.Player = Content.Load<Texture2D>("player");
-            Graphics.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
-            Graphics.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
-            Graphics.BatteryOutline = Content.Load<Texture2D>("battery");
-            Graphics.BatteryFill = Content.Load<Texture2D>("battery_overlay");
-            Graphics.Background = new Texture2D(GraphicsDevice, 1, 1000);// Content.Load<Texture2D>("background");
+            Resources.Planet = Content.Load<Texture2D>("planet");
+            Resources.Player = Content.Load<Texture2D>("player");
+            Resources.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
+            Resources.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
+            Resources.BatteryOutline = Content.Load<Texture2D>("battery");
+            Resources.BatteryFill = Content.Load<Texture2D>("battery_overlay");
+            Resources.Sun = Content.Load<Texture2D>("sun");
+            Resources.Background = new Texture2D(GraphicsDevice, 1, 1000);
+
+            Resources.BackgroundMusic = Content.Load<Song>("background_music");
+            Resources.StarCollectSound = Content.Load<SoundEffect>("star_capture");
          
             GenerateSkyGradient();
             LoadPlanetBlocks();
@@ -88,39 +101,42 @@ namespace Game2
                 double r = Random.NextDouble() * MaxStarHeight + _world.PlanetRadius;
                 int x = (int)(r * Math.Cos(angle));
                 int y = (int)(r * Math.Sin(angle));
-                _world.Stars.Add(new Star(x, y, Graphics.Stars[Random.Next(0, 2)], _world));
+                _world.Stars.Add(new Star(x, y, Resources.Stars[Random.Next(0, 2)], _world));
             }
 
 
             //BatteryPosition = new Vector2(10, _height - Graphics.BatteryOutline.Height - 500);
-            BatteryPosition = new Vector2(10, _height-Graphics.BatteryOutline.Height*2-10);
+            BatteryPosition = new Vector2(10, _height-Resources.BatteryOutline.Height*2-10);
+            
+            MediaPlayer.IsRepeating = true;
+            MediaPlayer.Play(Resources.BackgroundMusic);
         }
 
         private void GenerateSkyGradient()
         {
-            var colors = new Color[Graphics.Background.Width * Graphics.Background.Height];
-            for(int y = 0; y < Graphics.Background.Height; y++)
+            var colors = new Color[Resources.Background.Width * Resources.Background.Height];
+            for(int y = 0; y < Resources.Background.Height; y++)
             {
-                float c = (float)y / (Graphics.Background.Height-1);
-                for (int x = 0; x < Graphics.Background.Width; x++)
-                    colors[x + y * Graphics.Background.Width] = Graphics.Interpolate(Graphics.LightSky, Graphics.DarkSky, c);
+                float c = (float)y / (Resources.Background.Height-1);
+                for (int x = 0; x < Resources.Background.Width; x++)
+                    colors[x + y * Resources.Background.Width] = Resources.Interpolate(Resources.LightSky, Resources.DarkSky, c);
             }
-            Graphics.Background.SetData(colors);
+            Resources.Background.SetData(colors);
         }
-        
+
         private void LoadPlanetBlocks()
         {
-            var colors1D = new Color[Graphics.Planet.Width * Graphics.Planet.Height];
-            Graphics.Planet.GetData(colors1D);
+            var colors1D = new Color[Resources.Planet.Width * Resources.Planet.Height];
+            Resources.Planet.GetData(colors1D);
             int startX = 0, startY = 0, endX = 0, endY = 0;
-            for (int x = 0; x < Graphics.Planet.Width; x++)
+            for (int x = 0; x < Resources.Planet.Width; x++)
             {
-                for (int y = 0; y < Graphics.Planet.Height; y++)
+                for (int y = 0; y < Resources.Planet.Height; y++)
                 {
-                    var c = colors1D[x + y * Graphics.Planet.Width]; ;
+                    var c = colors1D[x + y * Resources.Planet.Width]; ;
                     if (c.A != 0)
                     {
-                        _world.PlanetBlocks.Add(new Block(x - Graphics.Planet.Width / 2, y - Graphics.Planet.Height / 2, PlanetBlockSize, BlockType.Ground, c));
+                        _world.PlanetBlocks.Add(new Block(x - Resources.Planet.Width / 2, y - Resources.Planet.Height / 2, PlanetBlockSize, BlockType.Ground, c));
                         endX = Math.Max(endX, x);
                         endY = Math.Max(endY, y);
                         startX = Math.Min(startX, x);
@@ -142,8 +158,8 @@ namespace Game2
         protected override void UnloadContent()
         {
             // TODO: Unload any non ContentManager content here
-            Graphics.Planet.Dispose();
-            Graphics.Pixel.Dispose();
+            Resources.Planet.Dispose();
+            Resources.Pixel.Dispose();
         }
 
         /// <summary>
@@ -182,6 +198,9 @@ namespace Game2
                 _world.Player.DrainPower(JumpDrainAmount);
             }
 
+            foreach (var s in _world.Stars)
+                s.Update();
+
             //_world.Player.Velocity -= _world.Player.Position * Gravity;
             var g = -_world.Player.Position;
             g.Normalize();
@@ -202,14 +221,15 @@ namespace Game2
 
 
             spriteBatch.Begin(transformMatrix: Matrix.CreateRotationZ(_backgroundAngle+_worldAngle+(float)Math.PI/2) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
-            spriteBatch.Draw(Graphics.Pixel, new Rectangle(-5000, -5000, 10000, 5000), Graphics.LightSky);
-            spriteBatch.Draw(Graphics.Pixel, new Rectangle(-5000, 0, 10000, 5000), Graphics.DarkSky);
-            spriteBatch.Draw(Graphics.Background, new Rectangle(-5000, -50*3, 10000, 100*3), Color.White);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle(-5000, -5000, 10000, 5000), Resources.LightSky);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle(-5000, 0, 10000, 5000), Resources.DarkSky);
+            spriteBatch.Draw(Resources.Background, new Rectangle(-5000, -50*3, 10000, 100*3), Color.White);
             spriteBatch.End();
 
             // TODO: Add your drawing code here 
             float scale = 1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10 ;
-            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
+            var worldTransformationMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width / 2, _height / 2, 0);
+            spriteBatch.Begin(transformMatrix: worldTransformationMatrix);
             
             foreach (var b in _world.PlanetBlocks)
             {
@@ -217,9 +237,12 @@ namespace Game2
             }
             int sunX = (int)(_world.SunPosition.X * (_world.PlanetRadius));
             int sunY = (int)(_world.SunPosition.Y * ( _world.PlanetRadius));
-            spriteBatch.Draw(Graphics.Pixel, new Rectangle(sunX, sunY, 10, 10), Color.Yellow);
+            spriteBatch.Draw(Resources.Sun, new Rectangle(sunX, sunY, Resources.Sun.Width * 2, Resources.Sun.Height * 2), Color.White);
             _world.Player.Draw(spriteBatch);
             spriteBatch.End();
+
+            var wtf = Vector2.Transform(_world.Player.Position, worldTransformationMatrix); // transform to absolute coordinates
+            
 
             spriteBatch.Begin(transformMatrix: Matrix.CreateScale(0.6f) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
             var prevSun = _world.SunPosition;
@@ -239,11 +262,11 @@ namespace Game2
         private void DrawBattery()
         {
             var percentage = _world.Player.Power / 100;
-            var color = Graphics.Interpolate(Color.Red, new Color(0, 255, 0), percentage);
-            var length = Graphics.BatteryFill.Width * percentage;
+            var color = Resources.Interpolate(Color.Red, new Color(0, 255, 0), percentage);
+            var length = Resources.BatteryFill.Width * percentage;
             spriteBatch.Begin(transformMatrix: Matrix.CreateScale(2));
-            spriteBatch.Draw(Graphics.BatteryOutline, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, Graphics.BatteryOutline.Width, Graphics.BatteryOutline.Height), Color.White);
-            spriteBatch.Draw(Graphics.BatteryFill, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, (int)(Graphics.BatteryFill.Width * percentage), Graphics.BatteryFill.Height), color);
+            spriteBatch.Draw(Resources.BatteryOutline, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, Resources.BatteryOutline.Width, Resources.BatteryOutline.Height), Color.White);
+            spriteBatch.Draw(Resources.BatteryFill, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, (int)(Resources.BatteryFill.Width * percentage), Resources.BatteryFill.Height), color);
             spriteBatch.End();
         }
 
