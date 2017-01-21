@@ -34,7 +34,7 @@ namespace Game2
             foreach(var b in Blocks)
             {
                 if(!Game1.IsLit(b.Position, World.SunPosition))
-                    b.Draw(sb);
+                    b.Draw(sb, b.Position.Dot(World.SunPosition) * 0.01f, modifyAlpha: true);
             }
         }
     }

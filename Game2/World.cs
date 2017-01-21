@@ -14,5 +14,6 @@ namespace Game2
         //public List<Entity> Entities { get; } = new List<Entity>();
         public Entity Player;
         public List<Star> Stars { get; } = new List<Star>();
+        public int PlanetRadius = 0;
     }
 }

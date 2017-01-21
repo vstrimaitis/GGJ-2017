@@ -6,7 +6,7 @@ namespace Game2
 {
     class Entity
     {
-        const int BlockSize = 6;
+        const int BlockSize = Game1.PlanetBlockSize;
         const float ChargeSpeed = 1 / 20f;
         const float DischargeSpeed = 1 / 10f;
         public World World { get; }

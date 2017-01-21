@@ -10,8 +10,8 @@ namespace Game2
 {
     static class Graphics
     {
-        public static Color LightSky = new Color(152, 200, 225);
-        public static Color DarkSky = new Color(2, 5, 54);
+        public static Color LightSky = new Color(214, 224, 255);
+        public static Color DarkSky = new Color(2, 6, 53);
 
         public static Texture2D Pixel;
         public static Texture2D Planet;
@@ -32,6 +32,12 @@ namespace Game2
             if (correctionFactor > 0)
                 return Lighten(color, correctionFactor);
             return Darken(color, -correctionFactor);
+        }
+
+        public static Color ModifyAlpha(Color color, float dist)
+        {
+            var modifier = -dist * 1 / 1.5f;
+            return new Color((int)(color.R * modifier), (int)(color.G * modifier), (int)(color.B * modifier), (int)(color.A * modifier));
         }
 
         private static Color Lighten(Color color, float correctionFactor)

@@ -12,7 +12,8 @@ namespace Game2
     public class Game1 : Game
     {
         Random Random = new Random();
-        const int PlanetBlockSize = 6;
+        public const int PlanetBlockSize = 5;
+        const int MaxStarHeight = 200;
         public const int StarBlockSize = 1;
         const float PulseSpeed = 1 / 60f;
         const float WorldRotationSpeed = 1 / 120f;
@@ -33,8 +34,8 @@ namespace Game2
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferHeight = _height = 700;
-            graphics.PreferredBackBufferWidth = _width= 1500;
+            graphics.PreferredBackBufferHeight = _height = 850;
+            graphics.PreferredBackBufferWidth = _width = 850;
             Content.RootDirectory = "Content";
         }
 
@@ -68,13 +69,19 @@ namespace Game2
             Graphics.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
             Graphics.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
             Graphics.Background = new Texture2D(GraphicsDevice, 1, 1000);// Content.Load<Texture2D>("background");
-            
-            for(int i = 0; i < 15; i++)
-            {
-                _world.Stars.Add(new Star(Random.Next(-_width/2, _width/2), Random.Next(-_height/2, _height/2), Graphics.Stars[Random.Next(0, 2)], _world));
-            }
+         
             GenerateSkyGradient();
             LoadPlanetBlocks();
+
+            for (int i = 0; i < 20; i++)
+            {
+                double angle = Random.NextDouble() * 2 * Math.PI;
+                double r = Random.NextDouble() * MaxStarHeight + _world.PlanetRadius;
+                int x = (int)(r * Math.Cos(angle));
+                int y = (int)(r * Math.Sin(angle));
+                _world.Stars.Add(new Star(x, y, Graphics.Stars[Random.Next(0, 2)], _world));
+
+            }
         }
 
         private void GenerateSkyGradient()
@@ -93,15 +100,27 @@ namespace Game2
         {
             var colors1D = new Color[Graphics.Planet.Width * Graphics.Planet.Height];
             Graphics.Planet.GetData(colors1D);
+            int startX = 0, startY = 0, endX = 0, endY = 0;
             for (int x = 0; x < Graphics.Planet.Width; x++)
             {
                 for (int y = 0; y < Graphics.Planet.Height; y++)
                 {
                     var c = colors1D[x + y * Graphics.Planet.Width]; ;
                     if (c.A != 0)
+                    {
                         _world.PlanetBlocks.Add(new Block(x - Graphics.Planet.Width / 2, y - Graphics.Planet.Height / 2, PlanetBlockSize, BlockType.Ground, c));
+                        endX = Math.Max(endX, x);
+                        endY = Math.Max(endY, y);
+                        startX = Math.Min(startX, x);
+                        startY = Math.Min(startY, y);
+
+                    }
                 }
             }
+
+            //_world.PlanetRadius = (int)(Math.Max(endX - startX + 1, endY - startY + 1) * 2.4f * PlanetBlockSize / 2) ;
+            _world.PlanetRadius = (int)(Math.Max(endX - startX + 1, endY - startY + 1) / 2 * PlanetBlockSize*2.5f) ;
+
         }
 
         /// <summary>
@@ -175,14 +194,17 @@ namespace Game2
             spriteBatch.Draw(Graphics.Background, new Rectangle(-5000, -50*3, 10000, 100*3), Color.White);
             spriteBatch.End();
 
-            // TODO: Add your drawing code here
-            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(/*1 + (float)Math.Sin(_pulseTime) / 5*/1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
+            // TODO: Add your drawing code here 
+            float scale = 1 + (float)(/*Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)*/0+1) / 10 ;
+            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
             
             foreach (var b in _world.PlanetBlocks)
             {
                 b.Draw(spriteBatch, b.Position.Dot(_world.SunPosition) * 0.15f);
             }
-            spriteBatch.Draw(Graphics.Pixel, new Rectangle((int)(_world.SunPosition.X * 200), (int)(_world.SunPosition.Y * 200), 10, 10), Color.Yellow);
+            int sunX = (int)(_world.SunPosition.X * (_world.PlanetRadius));
+            int sunY = (int)(_world.SunPosition.Y * ( _world.PlanetRadius));
+            spriteBatch.Draw(Graphics.Pixel, new Rectangle(sunX, sunY, 10, 10), Color.Yellow);
             _world.Player.Draw(spriteBatch);
             spriteBatch.End();
 

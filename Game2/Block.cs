@@ -23,10 +23,13 @@ namespace Game2
             Size = size;
         }
 
-        public void Draw(SpriteBatch sb, float dist = 0)
+        public void Draw(SpriteBatch sb, float dist = 0, bool modifyAlpha = false)
         {
             var color = Color;
-            color = Graphics.Modify(color, dist);
+            if (!modifyAlpha)
+                color = Graphics.Modify(color, dist);
+            else
+                color = Graphics.ModifyAlpha(color, dist);
             sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), color);
         }
 
