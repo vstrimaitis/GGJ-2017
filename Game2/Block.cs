@@ -10,19 +10,20 @@ namespace Game2
 
     class Block
     {
-        public const int Size = 6;
+        public int Size { get; private set; }
         public BlockType Type { get; private set; }
         public Color Color { get; private set; }
         public Vector2 Position { get; private set; }
 
-        public Block(int x, int y, BlockType type, Color color)
+        public Block(int x, int y, int size, BlockType type, Color color)
         {
             Type = type;
             Position = new Vector2(x, y);
             Color = color;
+            Size = size;
         }
 
-        public void Draw(SpriteBatch sb, float dist)
+        public void Draw(SpriteBatch sb, float dist = 0)
         {
             var color = Color;
             color = Graphics.Modify(color, dist);

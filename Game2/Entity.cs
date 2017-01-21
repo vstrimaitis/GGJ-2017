@@ -6,6 +6,7 @@ namespace Game2
 {
     class Entity
     {
+        const int BlockSize = 6;
         const float ChargeSpeed = 1 / 20f;
         const float DischargeSpeed = 1 / 10f;
         public World World { get; }
@@ -26,16 +27,19 @@ namespace Game2
 
         public void Draw(SpriteBatch sb)
         {
-            var rect = new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size));
+            var rect = new Rectangle((int)(Position.X * BlockSize), (int)(Position.Y * BlockSize), (int)(Size.X * BlockSize), (int)(Size.Y * BlockSize));
             float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
             sb.Draw(Graphics.Player, rect, null, Color.White, angle, new Vector2(Graphics.Player.Width/2, Graphics.Player.Height), SpriteEffects.None, 0);
-            //var color = Graphics.Interpolate(Color.Red, Color.Green, Power / 100);
+
+            var color = Graphics.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
+            sb.Draw(Graphics.PlayerHat, rect, null, color, angle, new Vector2(Graphics.Player.Width / 2, Graphics.Player.Height), SpriteEffects.None, 0);
+
             //sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), color);
         }
 
         private bool IsInBlock(Vector2 point)
         {
-            foreach (var b in World.Blocks)
+            foreach (var b in World.PlanetBlocks)
             {
                 if (b.Contains(point))
                     return true;
@@ -81,7 +85,7 @@ namespace Game2
         public bool MoveUp(float dist)
         {
             float movedDist = dist;
-            foreach(var b in World.Blocks)
+            foreach(var b in World.PlanetBlocks)
             {
                 if (b.Position.X + 1 < Position.X)
                     continue;

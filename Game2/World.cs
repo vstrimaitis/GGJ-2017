@@ -10,8 +10,9 @@ namespace Game2
     class World
     {
         public Vector2 SunPosition;
-        public List<Block> Blocks { get; } = new List<Block>();
+        public List<Block> PlanetBlocks { get; } = new List<Block>();
         //public List<Entity> Entities { get; } = new List<Entity>();
         public Entity Player;
+        public List<Star> Stars { get; } = new List<Star>();
     }
 }

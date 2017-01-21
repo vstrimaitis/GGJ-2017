@@ -11,14 +11,15 @@ namespace Game2
     /// </summary>
     public class Game1 : Game
     {
-        const int MinBlockSize = 4;
-        const int MaxBlockSize = 8;
+        Random Random = new Random();
+        const int PlanetBlockSize = 6;
+        public const int StarBlockSize = 1;
         const float PulseSpeed = 1 / 60f;
         const float WorldRotationSpeed = 1 / 120f;
         const float BackgroundRotationSpeed = -1 / 500f;
         const float Gravity = 100f;
         const float PlayerHorizontalSpeed = 0.4f;//0.9f;
-        const float PlayerJumpSpeed = 1.5f;
+        const float PlayerJumpSpeed = 2f;
         float _worldAngle = 0;
         float _backgroundAngle = 0;
         float _pulseTime = 0;
@@ -64,7 +65,14 @@ namespace Game2
             spriteBatch = new SpriteBatch(GraphicsDevice);
             Graphics.Planet = Content.Load<Texture2D>("planet");
             Graphics.Player = Content.Load<Texture2D>("player");
+            Graphics.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
+            Graphics.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
             Graphics.Background = new Texture2D(GraphicsDevice, 1, 1000);// Content.Load<Texture2D>("background");
+            
+            for(int i = 0; i < 15; i++)
+            {
+                _world.Stars.Add(new Star(Random.Next(-_width/2, _width/2), Random.Next(-_height/2, _height/2), Graphics.Stars[Random.Next(0, 2)], _world));
+            }
             GenerateSkyGradient();
             LoadPlanetBlocks();
         }
@@ -91,7 +99,7 @@ namespace Game2
                 {
                     var c = colors1D[x + y * Graphics.Planet.Width]; ;
                     if (c.A != 0)
-                        _world.Blocks.Add(new Block(x - Graphics.Planet.Width / 2, y - Graphics.Planet.Height / 2, BlockType.Ground, c));
+                        _world.PlanetBlocks.Add(new Block(x - Graphics.Planet.Width / 2, y - Graphics.Planet.Height / 2, PlanetBlockSize, BlockType.Ground, c));
                 }
             }
         }
@@ -168,9 +176,9 @@ namespace Game2
             spriteBatch.End();
 
             // TODO: Add your drawing code here
-            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(1 + (float)Math.Sin(_pulseTime) / 5) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
+            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(/*1 + (float)Math.Sin(_pulseTime) / 5*/1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
             
-            foreach (var b in _world.Blocks)
+            foreach (var b in _world.PlanetBlocks)
             {
                 b.Draw(spriteBatch, b.Position.Dot(_world.SunPosition) * 0.15f);
             }
@@ -178,7 +186,15 @@ namespace Game2
             _world.Player.Draw(spriteBatch);
             spriteBatch.End();
 
-
+            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(0.6f) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
+            var prevSun = _world.SunPosition;
+            _world.SunPosition = new Vector2((float)Math.Cos(_backgroundAngle + _worldAngle), (float)Math.Sin(_backgroundAngle + _worldAngle));
+            foreach (var s in _world.Stars)
+            {
+                s.Draw(spriteBatch);
+            }
+            _world.SunPosition = prevSun;
+            spriteBatch.End();
             
             base.Draw(gameTime);
         }

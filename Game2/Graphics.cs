@@ -10,13 +10,15 @@ namespace Game2
 {
     static class Graphics
     {
-        public static Color LightSky = new Color(79, 183, 198);
-        public static Color DarkSky = Color.Black;// new Color(0, 14, 100);
+        public static Color LightSky = new Color(152, 200, 225);
+        public static Color DarkSky = new Color(2, 5, 54);
 
         public static Texture2D Pixel;
         public static Texture2D Planet;
         public static Texture2D Background;
         public static Texture2D Player;
+        public static Texture2D PlayerHat;
+        public static Texture2D[] Stars;
 
         private const float UpperDarkBound = 0.7f;
         private const float UpperLightBound = 0.1f;
