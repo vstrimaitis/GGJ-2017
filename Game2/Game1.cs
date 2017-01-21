@@ -13,6 +13,7 @@ namespace Game2
     {
         Vector2 BatteryPosition;
         Random Random = new Random();
+        const int JumpDrainAmount = 10;
         public const int PlanetBlockSize = 5;
         const int MaxStarHeight = 200;
         public const int StarBlockSize = 1;
@@ -178,6 +179,7 @@ namespace Game2
             if (state.IsKeyDown(Keys.Up) && _world.Player.IsOnGround)
             {
                 _world.Player.Velocity += _world.Player.Position / _world.Player.Position.Length() * PlayerJumpSpeed;
+                _world.Player.DrainPower(JumpDrainAmount);
             }
 
             //_world.Player.Velocity -= _world.Player.Position * Gravity;

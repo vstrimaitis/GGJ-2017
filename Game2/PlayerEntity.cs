@@ -84,6 +84,13 @@ namespace Game2
                 OnDeath?.Invoke(this, EventArgs.Empty);
         }
 
+        public void DrainPower(int amount)
+        {
+            Power -= amount;
+            if (Power <= 0)
+                OnDeath?.Invoke(this, EventArgs.Empty);
+        }
+
         public bool MoveUp(float dist)
         {
             float movedDist = dist;
