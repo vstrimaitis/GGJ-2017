@@ -10,7 +10,7 @@ namespace Game2
 
     class Block
     {
-        public const int Size = 7;
+        public const int Size = 6;
         public BlockType Type { get; private set; }
         public Color Color { get; private set; }
         public Vector2 Position { get; private set; }
@@ -22,9 +22,11 @@ namespace Game2
             Color = color;
         }
 
-        public void Draw(SpriteBatch sb)
+        public void Draw(SpriteBatch sb, float dist)
         {
-            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), Color);
+            var color = Color;
+            color = Graphics.Modify(color, dist);
+            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), color);
         }
 
         public bool Contains(Vector2 p)

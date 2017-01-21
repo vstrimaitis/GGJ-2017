@@ -20,9 +20,12 @@ namespace Game2
             World = world;
         }
 
-        public void Draw(SpriteBatch sb)
+        public void Draw(SpriteBatch sb, bool isLitUp)
         {
-            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), Color.Red);
+            var color = Color.Red;
+            if (isLitUp)
+                color = Color.Pink;
+            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), color);
         }
 
         private bool IsInBlock(Vector2 point)
