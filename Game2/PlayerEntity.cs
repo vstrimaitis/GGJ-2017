@@ -4,7 +4,7 @@ using System;
 
 namespace Game2
 {
-    class Entity
+    class PlayerEntity
     {
         const int BlockSize = Game1.PlanetBlockSize;
         const float ChargeSpeed = 1 / 20f;
@@ -16,7 +16,9 @@ namespace Game2
         public bool IsOnGround { get; private set; }
         public float Power { get; private set; } = 100;
 
-        public Entity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
+        public EventHandler OnDeath;
+
+        public PlayerEntity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
         {
             Position = pos;
             //Size = size;
@@ -33,8 +35,6 @@ namespace Game2
 
             var color = Graphics.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
             sb.Draw(Graphics.PlayerHat, rect, null, color, angle, new Vector2(Graphics.Player.Width / 2, Graphics.Player.Height), SpriteEffects.None, 0);
-
-            //sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), color);
         }
 
         private bool IsInBlock(Vector2 point)
@@ -80,6 +80,8 @@ namespace Game2
                 Power = MathHelper.Min(Power + ChargeSpeed, 100);
             else
                 Power = MathHelper.Max(Power - DischargeSpeed, 0);
+            if (Power == 0)
+                OnDeath?.Invoke(this, EventArgs.Empty);
         }
 
         public bool MoveUp(float dist)

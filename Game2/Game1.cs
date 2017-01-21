@@ -11,6 +11,7 @@ namespace Game2
     /// </summary>
     public class Game1 : Game
     {
+        Vector2 BatteryPosition;
         Random Random = new Random();
         public const int PlanetBlockSize = 5;
         const int MaxStarHeight = 200;
@@ -52,7 +53,12 @@ namespace Game2
             Graphics.Pixel.SetData(new Color[] { Color.White });
 
             //_world.Entities.Add(new Entity(Vector2.Zero, new Vector2(1, 1), Vector2.Zero, _world));
-            _world.Player = new Entity(-Vector2.UnitY * 25, Vector2.Zero, _world);
+            _world.Player = new PlayerEntity(-Vector2.UnitY * 25, Vector2.Zero, _world);
+            _world.Player.OnDeath += (sender, args) =>
+            {
+                System.Windows.Forms.MessageBox.Show("You ded man ;(");
+                this.Exit();
+            };
             base.Initialize();
         }
 
@@ -68,6 +74,8 @@ namespace Game2
             Graphics.Player = Content.Load<Texture2D>("player");
             Graphics.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
             Graphics.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
+            Graphics.BatteryOutline = Content.Load<Texture2D>("battery");
+            Graphics.BatteryFill = Content.Load<Texture2D>("battery_overlay");
             Graphics.Background = new Texture2D(GraphicsDevice, 1, 1000);// Content.Load<Texture2D>("background");
          
             GenerateSkyGradient();
@@ -80,8 +88,11 @@ namespace Game2
                 int x = (int)(r * Math.Cos(angle));
                 int y = (int)(r * Math.Sin(angle));
                 _world.Stars.Add(new Star(x, y, Graphics.Stars[Random.Next(0, 2)], _world));
-
             }
+
+
+            //BatteryPosition = new Vector2(10, _height - Graphics.BatteryOutline.Height - 500);
+            BatteryPosition = new Vector2(10, _height-Graphics.BatteryOutline.Height*2-10);
         }
 
         private void GenerateSkyGradient()
@@ -195,7 +206,7 @@ namespace Game2
             spriteBatch.End();
 
             // TODO: Add your drawing code here 
-            float scale = 1 + (float)(/*Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)*/0+1) / 10 ;
+            float scale = 1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10 ;
             spriteBatch.Begin(transformMatrix: Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width/2, _height/2, 0));
             
             foreach (var b in _world.PlanetBlocks)
@@ -217,8 +228,21 @@ namespace Game2
             }
             _world.SunPosition = prevSun;
             spriteBatch.End();
+
+            DrawBattery();
             
             base.Draw(gameTime);
+        }
+
+        private void DrawBattery()
+        {
+            var percentage = _world.Player.Power / 100;
+            var color = Graphics.Interpolate(Color.Red, new Color(0, 255, 0), percentage);
+            var length = Graphics.BatteryFill.Width * percentage;
+            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(2));
+            spriteBatch.Draw(Graphics.BatteryOutline, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, Graphics.BatteryOutline.Width, Graphics.BatteryOutline.Height), Color.White);
+            spriteBatch.Draw(Graphics.BatteryFill, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, (int)(Graphics.BatteryFill.Width * percentage), Graphics.BatteryFill.Height), color);
+            spriteBatch.End();
         }
 
         public static bool IsLit(Vector2 point, Vector2 sunPosition)

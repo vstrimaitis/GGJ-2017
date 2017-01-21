@@ -19,6 +19,8 @@ namespace Game2
         public static Texture2D Player;
         public static Texture2D PlayerHat;
         public static Texture2D[] Stars;
+        public static Texture2D BatteryOutline;
+        public static Texture2D BatteryFill;
 
         private const float UpperDarkBound = 0.7f;
         private const float UpperLightBound = 0.1f;
