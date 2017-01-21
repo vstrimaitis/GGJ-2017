@@ -16,14 +16,7 @@ namespace Game2
         public BlockType Type { get; private set; }
         public Color Color { get; private set; }
         public Vector2 Position { get; private set; }
-
-        public Rectangle BoundingBox
-        {
-            get
-            {
-                return new Rectangle((int)Position.X, (int)Position.Y, Size, Size);
-            }
-        }
+        public Vector2 AbsolutePosition;
 
         public Block(int x, int y, int size, BlockType type, Color color)
         {

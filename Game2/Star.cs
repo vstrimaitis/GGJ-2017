@@ -34,11 +34,19 @@ namespace Game2
         {
             foreach(var b in Blocks)
             {
-                if (b.BoundingBox.Intersects(World.Player.BoundingBox))
+                var dist = (b.AbsolutePosition - World.Player.AbsolutePosition).Length();
+                if (dist < 50)
+                {
+                    OnCollision?.Invoke(this, EventArgs.Empty);
+                    Console.WriteLine(dist);
+                    return;
+                }
+                /*if (b.BoundingBox.Intersects(World.Player.BoundingBox))
                 {
                     OnCollision?.Invoke(this, EventArgs.Empty);
                     return;
-                }
+                }*/
+
             }
         }
 

@@ -14,6 +14,7 @@ namespace Game2
         public Vector2 Position;
         public Vector2 Size;
         public Vector2 Velocity;
+        public Vector2 AbsolutePosition;
         public bool IsOnGround { get; private set; }
         public float Power { get; private set; } = 100;
 
@@ -38,6 +39,7 @@ namespace Game2
 
         public void Draw(SpriteBatch sb)
         {
+
             var rect = new Rectangle((int)(Position.X * BlockSize), (int)(Position.Y * BlockSize), (int)(Size.X * BlockSize), (int)(Size.Y * BlockSize));
             float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
             sb.Draw(Resources.Player, rect, null, Color.White, angle, new Vector2(Resources.Player.Width/2, Resources.Player.Height), SpriteEffects.None, 0);

@@ -29,11 +29,18 @@ namespace Game2
         float _backgroundAngle = 0;
         float _pulseTime = 0;
 
+
+        Matrix _backgroundMatrix;
+        Matrix _worldMatrix;
+        Matrix _starMatrix;
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         int _width;
         int _height;
         World _world = new World();
+
+        HashSet<Star> _starsToDelete = new HashSet<Star>();
 
         public Game1()
         {
@@ -67,7 +74,7 @@ namespace Game2
             Star.OnCollision += (sender, args) =>
             {
                 var hitStar = sender as Star;
-                Console.WriteLine("hit");
+                _starsToDelete.Add(hitStar);
             };
             base.Initialize();
         }
@@ -178,6 +185,11 @@ namespace Game2
             _pulseTime += PulseSpeed;
             _world.SunPosition = new Vector2((float)Math.Cos(_backgroundAngle), (float)Math.Sin(_backgroundAngle));
 
+            _backgroundMatrix = Matrix.CreateRotationZ(_backgroundAngle + _worldAngle + (float)Math.PI / 2) * Matrix.CreateTranslation(_width / 2, _height / 2, 0);
+            float scale = 1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10;
+            _worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width / 2, _height / 2, 0);
+            _starMatrix = Matrix.CreateScale(0.6f) * Matrix.CreateTranslation(_width / 2, _height / 2, 0);
+
             var state = Keyboard.GetState();
             
             if (state.IsKeyDown(Keys.Left) && _world.Player.IsOnGround)
@@ -198,8 +210,22 @@ namespace Game2
                 _world.Player.DrainPower(JumpDrainAmount);
             }
 
+            _world.Player.AbsolutePosition = Vector2.Transform(_world.Player.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
+            foreach (var b in _world.PlanetBlocks)
+                b.AbsolutePosition = Vector2.Transform(b.Position * PlanetBlockSize, _worldMatrix);
+            foreach (var s in _world.Stars)
+                foreach (var b in s.Blocks)
+                    b.AbsolutePosition = Vector2.Transform(b.Position * StarBlockSize, _starMatrix);
+
             foreach (var s in _world.Stars)
                 s.Update();
+
+            if(_starsToDelete.Count > 0)
+            {
+                foreach (var s in _starsToDelete)
+                    _world.Stars.Remove(s);
+                _starsToDelete.Clear();
+            }
 
             //_world.Player.Velocity -= _world.Player.Position * Gravity;
             var g = -_world.Player.Position;
@@ -220,16 +246,14 @@ namespace Game2
             GraphicsDevice.Clear(Color.Black);
 
 
-            spriteBatch.Begin(transformMatrix: Matrix.CreateRotationZ(_backgroundAngle+_worldAngle+(float)Math.PI/2) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
+            spriteBatch.Begin(transformMatrix: _backgroundMatrix);
             spriteBatch.Draw(Resources.Pixel, new Rectangle(-5000, -5000, 10000, 5000), Resources.LightSky);
             spriteBatch.Draw(Resources.Pixel, new Rectangle(-5000, 0, 10000, 5000), Resources.DarkSky);
             spriteBatch.Draw(Resources.Background, new Rectangle(-5000, -50*3, 10000, 100*3), Color.White);
             spriteBatch.End();
 
             // TODO: Add your drawing code here 
-            float scale = 1 + (float)(Math.Sin(_pulseTime * 2) + Math.Cos(_pulseTime * 3)) / 10 ;
-            var worldTransformationMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationZ(_worldAngle) * Matrix.CreateTranslation(_width / 2, _height / 2, 0);
-            spriteBatch.Begin(transformMatrix: worldTransformationMatrix);
+            spriteBatch.Begin(transformMatrix: _worldMatrix);
             
             foreach (var b in _world.PlanetBlocks)
             {
@@ -241,10 +265,10 @@ namespace Game2
             _world.Player.Draw(spriteBatch);
             spriteBatch.End();
 
-            var wtf = Vector2.Transform(_world.Player.Position, worldTransformationMatrix); // transform to absolute coordinates
-            
 
-            spriteBatch.Begin(transformMatrix: Matrix.CreateScale(0.6f) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
+
+
+            spriteBatch.Begin(transformMatrix: _starMatrix);
             var prevSun = _world.SunPosition;
             _world.SunPosition = new Vector2((float)Math.Cos(_backgroundAngle + _worldAngle), (float)Math.Sin(_backgroundAngle + _worldAngle));
             foreach (var s in _world.Stars)
@@ -253,6 +277,15 @@ namespace Game2
             }
             _world.SunPosition = prevSun;
             spriteBatch.End();
+
+            /*spriteBatch.Begin();
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.AbsolutePosition.X, (int)_world.Player.AbsolutePosition.Y, 10, 10), Color.Red);
+            foreach (var b in _world.PlanetBlocks)
+                spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Yellow);
+            foreach(var s in _world.Stars)
+                foreach (var b in s.Blocks)
+                    spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Pink);
+            spriteBatch.End();*/
 
             DrawBattery();
             
