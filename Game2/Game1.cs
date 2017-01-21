@@ -22,7 +22,6 @@ namespace Game2
         float _worldAngle = 0;
         float _backgroundAngle = 0;
         float _pulseTime = 0;
-        Vector2 _sunPosition;
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -51,7 +50,7 @@ namespace Game2
             Graphics.Pixel.SetData(new Color[] { Color.White });
 
             //_world.Entities.Add(new Entity(Vector2.Zero, new Vector2(1, 1), Vector2.Zero, _world));
-            _world.Player = new Entity(Vector2.UnitX * 25, Vector2.Zero, _world);
+            _world.Player = new Entity(-Vector2.UnitY * 25, Vector2.Zero, _world);
             base.Initialize();
         }
 
@@ -64,6 +63,7 @@ namespace Game2
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
             Graphics.Planet = Content.Load<Texture2D>("planet");
+            Graphics.Player = Content.Load<Texture2D>("player");
             Graphics.Background = new Texture2D(GraphicsDevice, 1, 1000);// Content.Load<Texture2D>("background");
             GenerateSkyGradient();
             LoadPlanetBlocks();
@@ -75,27 +75,12 @@ namespace Game2
             for(int y = 0; y < Graphics.Background.Height; y++)
             {
                 float c = (float)y / (Graphics.Background.Height-1);
-                float r = Interpolate(Graphics.LightSky.R, Graphics.DarkSky.R, c);
-                float g = Interpolate(Graphics.LightSky.G, Graphics.DarkSky.G, c);
-                float b = Interpolate(Graphics.LightSky.B, Graphics.DarkSky.B, c);
-
                 for (int x = 0; x < Graphics.Background.Width; x++)
-                    colors[x + y * Graphics.Background.Width] = new Color(r, g, b);
+                    colors[x + y * Graphics.Background.Width] = Graphics.Interpolate(Graphics.LightSky, Graphics.DarkSky, c);
             }
             Graphics.Background.SetData(colors);
         }
-
-        private float Interpolate(float start, float end, float c)
-        {
-            c *= 2;
-            start /= 255;
-            end /= 255;
-            end -= start;
-            if (c < 1) return end / 2 * c * c * c + start;
-            c -= 2;
-            return end / 2 * (c * c * c + 2) + start;
-        }
-
+        
         private void LoadPlanetBlocks()
         {
             var colors1D = new Color[Graphics.Planet.Width * Graphics.Planet.Height];
@@ -136,7 +121,7 @@ namespace Game2
             _worldAngle += WorldRotationSpeed;
             _backgroundAngle += BackgroundRotationSpeed - WorldRotationSpeed;
             _pulseTime += PulseSpeed;
-            _sunPosition = new Vector2((float)Math.Cos(_backgroundAngle), (float)Math.Sin(_backgroundAngle));
+            _world.SunPosition = new Vector2((float)Math.Cos(_backgroundAngle), (float)Math.Sin(_backgroundAngle));
 
             var state = Keyboard.GetState();
             
@@ -179,7 +164,7 @@ namespace Game2
             spriteBatch.Begin(transformMatrix: Matrix.CreateRotationZ(_backgroundAngle+_worldAngle+(float)Math.PI/2) * Matrix.CreateTranslation(_width / 2, _height / 2, 0));
             spriteBatch.Draw(Graphics.Pixel, new Rectangle(-5000, -5000, 10000, 5000), Graphics.LightSky);
             spriteBatch.Draw(Graphics.Pixel, new Rectangle(-5000, 0, 10000, 5000), Graphics.DarkSky);
-            spriteBatch.Draw(Graphics.Background, new Rectangle(-5000, -50*6, 10000, 100*6), Color.White);
+            spriteBatch.Draw(Graphics.Background, new Rectangle(-5000, -50*3, 10000, 100*3), Color.White);
             spriteBatch.End();
 
             // TODO: Add your drawing code here
@@ -187,29 +172,22 @@ namespace Game2
             
             foreach (var b in _world.Blocks)
             {
-                b.Draw(spriteBatch, Dot(b.Position, _sunPosition) * 0.05f);
+                b.Draw(spriteBatch, b.Position.Dot(_world.SunPosition) * 0.15f);
             }
-            spriteBatch.Draw(Graphics.Pixel, new Rectangle((int)(_sunPosition.X * 200), (int)(_sunPosition.Y * 200), 10, 10), Color.Yellow);
-            _world.Player.Draw(spriteBatch, IsLitUp(_world.Player.Position));
+            spriteBatch.Draw(Graphics.Pixel, new Rectangle((int)(_world.SunPosition.X * 200), (int)(_world.SunPosition.Y * 200), 10, 10), Color.Yellow);
+            _world.Player.Draw(spriteBatch);
             spriteBatch.End();
 
-            Console.WriteLine(_backgroundAngle);
+
+            
             base.Draw(gameTime);
         }
 
-        private bool IsLitUp(Vector2 point)
+        public static bool IsLit(Vector2 point, Vector2 sunPosition)
         {
-            return Dot(point, _sunPosition) > 0;
+            return point.Dot(sunPosition) > 0;
         }
 
-        private float Cross(Vector2 v1, Vector2 v2)
-        {
-            return v1.X * v2.Y - v1.Y * v2.X;
-        }
-
-        private float Dot(Vector2 v1, Vector2 v2)
-        {
-            return v1.X * v2.X + v1.Y * v2.Y;
-        }
+        
     }
 }

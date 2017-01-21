@@ -11,13 +11,14 @@ namespace Game2
     static class Graphics
     {
         public static Color LightSky = new Color(79, 183, 198);
-        public static Color DarkSky = new Color(0, 6, 129);
+        public static Color DarkSky = Color.Black;// new Color(0, 14, 100);
 
         public static Texture2D Pixel;
         public static Texture2D Planet;
         public static Texture2D Background;
+        public static Texture2D Player;
 
-        private const float UpperDarkBound = 0.5f;
+        private const float UpperDarkBound = 0.7f;
         private const float UpperLightBound = 0.1f;
 
         public static Color Modify(Color color, float correctionFactor)
@@ -45,6 +46,32 @@ namespace Game2
             float green = color.G * (1 - correctionFactor);
             float blue = color.B * (1 - correctionFactor);
             return new Color((int)red, (int)green, (int)blue, color.A);
+        }
+
+        public static float Interpolate(float start, float end, float c)
+        {
+            c *= 2;
+            start /= 255;
+            end /= 255;
+            end -= start;
+            if (c < 1) return end / 2 * c * c * c + start;
+            c -= 2;
+            return end / 2 * (c * c * c + 2) + start;
+            /*c *= 2;
+            start /= 255;
+            end /= 255;
+            end -= start;
+            if (c < 1) return end / 2 * c * c * c * c + start;
+            c -= 2;
+            return -end / 2 * (c * c * c * c - 2) + start;*/
+        }
+
+        public static Color Interpolate(Color start, Color end, float c)
+        {
+            float r = Interpolate(start.R, end.R, c);
+            float g = Interpolate(start.G, end.G, c);
+            float b = Interpolate(start.B, end.B, c);
+            return new Color(r, g, b);
         }
     }
 }

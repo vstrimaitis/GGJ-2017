@@ -1,31 +1,36 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace Game2
 {
     class Entity
     {
+        const float ChargeSpeed = 1 / 20f;
+        const float DischargeSpeed = 1 / 10f;
         public World World { get; }
         public Vector2 Position;
         public Vector2 Size;
         public Vector2 Velocity;
         public bool IsOnGround { get; private set; }
+        public float Power { get; private set; } = 100;
 
         public Entity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
         {
             Position = pos;
             //Size = size;
-            Size = new Vector2(1, 1);
+            Size = new Vector2(5, 5);
             Velocity = vel;
             World = world;
         }
 
-        public void Draw(SpriteBatch sb, bool isLitUp)
+        public void Draw(SpriteBatch sb)
         {
-            var color = Color.Red;
-            if (isLitUp)
-                color = Color.Pink;
-            sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), color);
+            var rect = new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size));
+            float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
+            sb.Draw(Graphics.Player, rect, null, Color.White, angle, new Vector2(Graphics.Player.Width/2, Graphics.Player.Height), SpriteEffects.None, 0);
+            //var color = Graphics.Interpolate(Color.Red, Color.Green, Power / 100);
+            //sb.Draw(Graphics.Pixel, new Rectangle((int)(Position.X * Block.Size), (int)(Position.Y * Block.Size), (int)(Size.X * Block.Size), (int)(Size.Y * Block.Size)), color);
         }
 
         private bool IsInBlock(Vector2 point)
@@ -67,6 +72,10 @@ namespace Game2
                 IsOnGround = true;
                 Velocity = Vector2.Zero;
             }
+            if (Game1.IsLit(Position, World.SunPosition))
+                Power = MathHelper.Min(Power + ChargeSpeed, 100);
+            else
+                Power = MathHelper.Max(Power - DischargeSpeed, 0);
         }
 
         public bool MoveUp(float dist)
