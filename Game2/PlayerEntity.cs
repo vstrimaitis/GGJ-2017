@@ -15,19 +15,15 @@ namespace Game2
         public Vector2 Size;
         public Vector2 Velocity;
         public Vector2 AbsolutePosition;
+        public Vector2 Bounds;
         public bool IsOnGround { get; private set; }
         public float Power { get; private set; } = 100;
 
+        public List<Block> Blocks { get; } = new List<Block>();
+        public Block ReferenceBlock;
+
         public event EventHandler OnDeath;
-
-        public Rectangle BoundingBox
-        {
-            get
-            {
-                return new Rectangle((int)Position.X, (int)Position.Y, BlockSize, BlockSize);
-            }
-        }
-
+        
         public PlayerEntity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
         {
             Position = pos;
@@ -87,6 +83,9 @@ namespace Game2
                 IsOnGround = true;
                 Velocity = Vector2.Zero;
             }
+
+            foreach (var b in Blocks)
+                b.Position = Position + b.Coordinates;
             if (Game1.IsLit(Position, World.SunPosition))
                 Power = MathHelper.Min(Power + ChargeSpeed, 100);
             else
@@ -100,30 +99,6 @@ namespace Game2
             Power -= amount;
             if (Power <= 0)
                 OnDeath?.Invoke(this, EventArgs.Empty);
-        }
-
-        public bool MoveUp(float dist)
-        {
-            float movedDist = dist;
-            foreach(var b in World.PlanetBlocks)
-            {
-                if (b.Position.X + 1 < Position.X)
-                    continue;
-
-                if (b.Position.X > Position.X + Size.X)
-                    continue;
-
-                if (b.Position.Y + 1 - 0.001f > Position.Y)
-                    continue;
-
-                if (b.Position.Y + 1 > Position.Y - movedDist)
-                {
-                    movedDist = b.Position.Y + 1 - Position.Y;
-                    movedDist *= -1; // ?
-                }
-            }
-            Position.Y -= movedDist;
-            return movedDist < dist;
         }
     }
 }

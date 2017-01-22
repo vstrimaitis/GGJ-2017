@@ -18,7 +18,7 @@ namespace Game2
         const int JumpDrainAmount = 10;
         public const int PlanetBlockSize = 5;
         public const int StarBlockSize = 1;
-        public const int CollisionDistance = 25;
+        public const int CollisionDistance = 30;
         public const float StarVisibilityThreshold = 0.5f;
         const int MaxStarHeight = 200;
         const float PulseSpeed = 1 / 60f;
@@ -108,6 +108,7 @@ namespace Game2
          
             GenerateSkyGradient();
             LoadPlanetBlocks();
+            LoadPlayerBlocks();
 
             for (int i = 0; i < 20; i++)
             {
@@ -121,6 +122,44 @@ namespace Game2
             
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Play(Resources.BackgroundMusic);
+        }
+
+        private void LoadPlayerBlocks()
+        {
+            var colors1D = new Color[Resources.Player.Width * Resources.Player.Height];
+            Resources.Player.GetData(colors1D);
+            int startX = Resources.Player.Width, endX = 0, startY = Resources.Player.Height, endY = 0;
+            for (int xx = 0; xx < Resources.Player.Width; xx++)
+            {
+                for (int yy = 0; yy < Resources.Player.Height; yy++)
+                {
+                    var c = colors1D[xx + yy * Resources.Player.Width];
+                    if (c.A != 0)
+                    {
+                        startX = Math.Min(startX, xx);
+                        endX = Math.Max(endX, xx);
+                        startY = Math.Min(startY, yy);
+                        endY = Math.Max(endY, yy);
+                    }
+                }
+            }
+            _world.Player.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
+            for (int xx = 0; xx < Resources.Player.Width; xx++)
+            {
+                for (int yy = 0; yy < Resources.Player.Height; yy++)
+                {
+                    var c = colors1D[xx + yy * Resources.Player.Width];
+                    if (c.A != 0)
+                    {
+                        var block = new Block((int)(xx + _world.Player.Position.X), (int)(yy + _world.Player.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
+                        block.AbsolutePosition = block.Position;
+                        block.Coordinates = new Vector2(xx - startX, yy - startY);
+                        _world.Player.Blocks.Add(block);
+                        if (xx == Resources.Player.Width / 2 && yy == Resources.Player.Height - 1)
+                            _world.Player.ReferenceBlock = block;
+                    }
+                }
+            }
         }
 
         private bool GenerateStar()
@@ -235,12 +274,25 @@ namespace Game2
 
         private void UpdateAbsolutePositions()
         {
+            foreach (var b in _world.Player.Blocks)
+            {
+                float angle = (float)Math.Atan2(_world.Player.Position.Y, _world.Player.Position.X) + MathHelper.PiOver2;
+                var translationMatrix = Matrix.CreateTranslation(new Vector3(-_world.Player.Bounds.X / 2, -_world.Player.Bounds.Y, 0));
+                var rotationMatrix = Matrix.CreateRotationZ(angle);
+
+                var t = Vector2.Transform(b.Position, rotationMatrix*translationMatrix);
+                var p = Vector2.Transform(_world.Player.ReferenceBlock.Position, rotationMatrix*translationMatrix);
+                var diff = t - p;
+                var tmp = _world.Player.Position*PlanetBlockSize + diff;
+                b.AbsolutePosition =  Vector2.Transform(tmp, _worldMatrix);
+            }
             _world.Player.AbsolutePosition = Vector2.Transform(_world.Player.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
             foreach (var b in _world.PlanetBlocks)
                 b.AbsolutePosition = Vector2.Transform(b.Position * PlanetBlockSize, _worldMatrix);
             foreach (var s in _world.Stars)
                 foreach (var b in s.Blocks)
                     b.AbsolutePosition = Vector2.Transform(b.Position * StarBlockSize, _starMatrix);
+
         }
 
         private void UpdateKeyboard()
@@ -303,12 +355,30 @@ namespace Game2
         private void DrawDebugBlocks()
         {
             spriteBatch.Begin();
-            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.AbsolutePosition.X, (int)_world.Player.AbsolutePosition.Y, 10, 10), Color.Red);
+            //spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.AbsolutePosition.X, (int)_world.Player.AbsolutePosition.Y, 10, 10), Color.Red);
             foreach (var b in _world.PlanetBlocks)
                 spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Yellow);
             foreach(var s in _world.Stars)
                 foreach (var b in s.Blocks)
                     spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Pink);
+
+            foreach (var b in _world.Player.Blocks)
+                spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 5,5), Color.Black);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.ReferenceBlock.AbsolutePosition.X, (int)_world.Player.ReferenceBlock.AbsolutePosition.Y, 5,5), Color.Red);
+            var abs = Vector2.Transform(_world.Player.Position, _worldMatrix);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)abs.X, (int)abs.Y, 5, 5), Color.Blue);
+
+
+            foreach (var b in _world.Player.Blocks)
+                spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.Position.X, (int)b.Position.Y, 5, 5), Color.Black);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.ReferenceBlock.Position.X, (int)_world.Player.ReferenceBlock.Position.Y, 5, 5), Color.Red);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.Position.X, (int)_world.Player.Position.Y, 5, 5), Color.Blue);
+
+            spriteBatch.Draw(Resources.Pixel, new Rectangle(0, 0, 10, 10), Color.Pink);
+            var worldAbs = Vector2.Transform(Vector2.Zero, _worldMatrix);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)worldAbs.X, (int)worldAbs.Y, 10, 10), Color.Pink);
+
+
             spriteBatch.End();
         }
 

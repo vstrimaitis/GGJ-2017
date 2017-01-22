@@ -15,8 +15,9 @@ namespace Game2
         public int Size { get; private set; }
         public BlockType Type { get; private set; }
         public Color Color { get; private set; }
-        public Vector2 Position { get; private set; }
+        public Vector2 Position;
         public Vector2 AbsolutePosition;
+        public Vector2 Coordinates;
 
         public Rectangle BoundingBox
         {
