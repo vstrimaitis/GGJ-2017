@@ -27,11 +27,15 @@ namespace Game2
         public static Texture2D BatteryOutline;
         public static Texture2D BatteryFill;
         public static Texture2D Sun;
+        public static Texture2D MenuBackground;
+        public static Texture2D GameOverBackground;
 
         public static Song BackgroundMusic;
         public static SoundEffect StarCollectSound;
         public static SoundEffect DeathSound;
         public static SoundEffect JumpSound;
+        public static SoundEffect StabbySound;
+        public static SoundEffect LowBatterySound;
 
         public static SpriteFont Font;
     }

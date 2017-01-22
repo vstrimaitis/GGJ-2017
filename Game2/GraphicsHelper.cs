@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,29 @@ namespace Game2
     {
         private const float UpperDarkBound = 0.7f;
         private const float UpperLightBound = 0.1f;
+
+        public static void DrawString(SpriteBatch spriteBatch, SpriteFont font, string strToDraw, Rectangle boundaries, Color color)
+        {
+            Vector2 size = font.MeasureString(strToDraw);
+
+            float xScale = (boundaries.Width / size.X);
+            float yScale = (boundaries.Height / size.Y);
+
+            float scale = Math.Min(xScale, yScale);
+
+            int strWidth = (int)Math.Round(size.X * scale);
+            int strHeight = (int)Math.Round(size.Y * scale);
+            Vector2 position = new Vector2();
+            position.X = (((boundaries.Width - strWidth) / 2) + boundaries.X);
+            position.Y = (((boundaries.Height - strHeight) / 2) + boundaries.Y);
+
+            float rotation = 0.0f;
+            Vector2 spriteOrigin = new Vector2(0, 0);
+            float spriteLayer = 0.0f;
+            SpriteEffects spriteEffects = new SpriteEffects();
+
+            spriteBatch.DrawString(font, strToDraw, position, color, rotation, spriteOrigin, scale, spriteEffects, spriteLayer);
+        }
 
         public static Color Modify(Color color, float correctionFactor)
         {

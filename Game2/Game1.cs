@@ -24,7 +24,7 @@ namespace Game2
     public class Game1 : Game
     {
         Dictionary<GameState, IWindow> stateWindows;
-        GameState _currentState = GameState.Playing;
+        GameState _currentState = GameState.Menu;
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -41,27 +41,23 @@ namespace Game2
             var gameWindow = new GameplayWindow(w, h);
             var gameoverWindow = new GameoverWindow(w, h);
 
-            menuWindow.StateChanged += (sender, state) =>
-            {
-                _currentState = state;
-            };
-
-            gameWindow.StateChanged += (sender, state) =>
-            {
-                _currentState = state;
-            };
-
-            gameoverWindow.StateChanged += (sender, state) =>
-            {
-                _currentState = state;
-            };
+            menuWindow.StateChanged += OnStateChanged;
+            gameWindow.StateChanged += OnStateChanged;
+            gameoverWindow.StateChanged += OnStateChanged;
 
             stateWindows = new Dictionary<GameState, IWindow>()
             {
                 {GameState.Menu, menuWindow },
                 {GameState.Playing, gameWindow },
-                {GameState.Gameover, gameoverWindow }
+                {GameState.Gameover, gameoverWindow },
+                {GameState.Exiting, gameoverWindow },
             };
+        }
+
+        private void OnStateChanged(object sender, GameState state)
+        {
+            _currentState = state;
+            stateWindows[_currentState].Initialize();
         }
 
         /// <summary>
@@ -94,17 +90,20 @@ namespace Game2
             Resources.BatteryOutline = Content.Load<Texture2D>("battery");
             Resources.BatteryFill = Content.Load<Texture2D>("battery_overlay");
             Resources.Sun = Content.Load<Texture2D>("sun");
+            Resources.MenuBackground = Content.Load<Texture2D>("menu");
+            Resources.GameOverBackground = Content.Load<Texture2D>("you_tried");
             Resources.Background = new Texture2D(GraphicsDevice, 1, 1000);
 
             Resources.BackgroundMusic = Content.Load<Song>("background_music_2");
             Resources.StarCollectSound = Content.Load<SoundEffect>("star_capture");
             Resources.DeathSound = Content.Load<SoundEffect>("death_sound");
             Resources.JumpSound = Content.Load<SoundEffect>("jump");
+            Resources.LowBatterySound = Content.Load<SoundEffect>("warning");
 
             Resources.Font = Content.Load<SpriteFont>("font");
 
-
-            stateWindows[_currentState].Initialize();
+            foreach(var state in (IEnumerable<GameState>)Enum.GetValues(typeof(GameState)))
+                stateWindows[state].Initialize();
         }
         
         /// <summary>
@@ -128,6 +127,7 @@ namespace Game2
 
         protected override void Draw(GameTime gameTime)
         {
+            GraphicsDevice.Clear(Color.Black);
             if (_currentState == GameState.Exiting)
                 return;
             stateWindows[_currentState].Draw(spriteBatch);

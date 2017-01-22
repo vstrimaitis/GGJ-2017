@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
@@ -15,9 +16,9 @@ namespace Game2.Windows
     {
         public int Width { get; set; }
         public int Height { get; set; }
-        World _world = new World();
+        World _world;
 
-        HashSet<Star> _starsToDelete = new HashSet<Star>();
+        HashSet<Star> _starsToDelete;
 
         Vector2 Battery1Position;
         Vector2 Battery2Position;
@@ -26,6 +27,7 @@ namespace Game2.Windows
         public const int PlanetBlockSize = 5;
         public const int StarBlockSize = 1;
         public const int CollisionDistance = 30;
+        const float DangerousBatteryLevel = 0.3f;
         public const float StarVisibilityThreshold = 0.5f;
         const int MaxStarHeight = 200;
         const float PulseSpeed = 1 / 60f;
@@ -37,6 +39,7 @@ namespace Game2.Windows
         float _worldAngle = 0;
         float _backgroundAngle = 0;
         float _pulseTime = 0;
+        SoundEffectInstance lowBatterySoundInstance;
 
         float stabCooldown = 1000f;
         Stopwatch stabTimer = null;
@@ -58,8 +61,10 @@ namespace Game2.Windows
 
         public void Initialize()
         {
+            _world = new World();
             GenerateSkyGradient();
             LoadPlanetBlocks();
+            _starsToDelete = new HashSet<Star>();
 
             for (int i = 0; i < 20; i++)
             {
@@ -100,6 +105,8 @@ namespace Game2.Windows
                 Resources.StarCollectSound.Play();
             };
             LoadPlayerBlocks();
+
+            lowBatterySoundInstance = Resources.LowBatterySound.CreateInstance();
 
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Play(Resources.BackgroundMusic);
@@ -275,6 +282,11 @@ namespace Game2.Windows
             }
             if (stabTimer != null && stabTimer.ElapsedMilliseconds >= stabCooldown)
                 stabTimer = null;
+
+            float sheriffPercentage = _world.Sheriff.Power / 100;
+            float thiefPercentage = _world.Thief.Power / 100;
+            if ((sheriffPercentage < DangerousBatteryLevel || thiefPercentage < DangerousBatteryLevel) && lowBatterySoundInstance.State == SoundState.Stopped)
+                lowBatterySoundInstance.Play();
         }
 
         private void AddGravity()
@@ -530,36 +542,13 @@ namespace Game2.Windows
                                                            50);
             spriteBatch.Begin();
 
-            DrawString(spriteBatch, Resources.Font, _world.Sheriff.Score.ToString(), sheriffScoreBoundaries, Resources.FontColor);
-            DrawString(spriteBatch, Resources.Font, _world.Thief.Score.ToString(), thiefScoreBoundaries, Resources.FontColor);
-            DrawString(spriteBatch, Resources.Font, "Sheriff".ToUpper(), sheriffTitleBoundaries, Resources.FontColor);
-            DrawString(spriteBatch, Resources.Font, "Thief".ToUpper(), thiefTitleBoundaries, Resources.FontColor);
+            GraphicsHelper.DrawString(spriteBatch, Resources.Font, _world.Sheriff.Score.ToString(), sheriffScoreBoundaries, Resources.FontColor);
+            GraphicsHelper.DrawString(spriteBatch, Resources.Font, _world.Thief.Score.ToString(), thiefScoreBoundaries, Resources.FontColor);
+            GraphicsHelper.DrawString(spriteBatch, Resources.Font, "Sheriff".ToUpper(), sheriffTitleBoundaries, Resources.FontColor);
+            GraphicsHelper.DrawString(spriteBatch, Resources.Font, "Thief".ToUpper(), thiefTitleBoundaries, Resources.FontColor);
             spriteBatch.End();
         }
-
-        private void DrawString(SpriteBatch spriteBatch, SpriteFont font, string strToDraw, Rectangle boundaries, Color color)
-        {
-            Vector2 size = font.MeasureString(strToDraw);
-
-            float xScale = (boundaries.Width / size.X);
-            float yScale = (boundaries.Height / size.Y);
-
-            float scale = Math.Min(xScale, yScale);
-
-            int strWidth = (int)Math.Round(size.X * scale);
-            int strHeight = (int)Math.Round(size.Y * scale);
-            Vector2 position = new Vector2();
-            position.X = (((boundaries.Width - strWidth) / 2) + boundaries.X);
-            position.Y = (((boundaries.Height - strHeight) / 2) + boundaries.Y);
-
-            float rotation = 0.0f;
-            Vector2 spriteOrigin = new Vector2(0, 0);
-            float spriteLayer = 0.0f;
-            SpriteEffects spriteEffects = new SpriteEffects();
-
-            spriteBatch.DrawString(font, strToDraw, position, color, rotation, spriteOrigin, scale, spriteEffects, spriteLayer);
-        }
-
+        
         private void DrawBatteries(SpriteBatch spriteBatch)
         {
             var percentage1 = _world.Sheriff.Power / 100;
