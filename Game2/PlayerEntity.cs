@@ -8,26 +8,32 @@ namespace Game2
     class PlayerEntity
     {
         public const int BlockSize = Game1.PlanetBlockSize;
-        const float ChargeSpeed = 1 / 20f;
-        const float DischargeSpeed = 1 / 10f;
+        float ChargeSpeed;
+        float DischargeSpeed;
         public World World { get; }
         public Vector2 Position;
         public Vector2 Size;
         public Vector2 Velocity;
         public Vector2 AbsolutePosition;
         public Vector2 Bounds;
+        public Texture2D Texture;
+        public Texture2D TextureOverlay;
         public bool IsOnGround { get; private set; }
         public float Power { get; private set; } = 100;
+        public int Score;
 
         public List<Block> Blocks { get; } = new List<Block>();
         public Block ReferenceBlock;
 
         public event EventHandler OnDeath;
         
-        public PlayerEntity(Vector2 pos, /*Vector2 size,*/ Vector2 vel, World world)
+        public PlayerEntity(Vector2 pos, Vector2 vel, World world, float chargeSpeed, float dischargeSpeed, Texture2D texture, Texture2D overlay)
         {
+            ChargeSpeed = chargeSpeed;
+            DischargeSpeed = dischargeSpeed;
+            TextureOverlay = overlay;
+            Texture = texture;
             Position = pos;
-            //Size = size;
             Size = new Vector2(10,10);
             Velocity = vel;
             World = world;
@@ -38,10 +44,10 @@ namespace Game2
 
             var rect = new Rectangle((int)(Position.X * BlockSize), (int)(Position.Y * BlockSize), (int)(Size.X * BlockSize), (int)(Size.Y * BlockSize));
             float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
-            sb.Draw(Resources.Player, rect, null, Color.White, angle, new Vector2(Resources.Player.Width/2, Resources.Player.Height), SpriteEffects.None, 0);
+            sb.Draw(Texture, rect, null, Color.White, angle, new Vector2(Texture.Width/2, Texture.Height), SpriteEffects.None, 0);
 
             var color = GraphicsHelper.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
-            sb.Draw(Resources.PlayerHat, rect, null, color, angle, new Vector2(Resources.Player.Width / 2, Resources.Player.Height), SpriteEffects.None, 0);
+            sb.Draw(TextureOverlay, rect, null, color, angle, new Vector2(TextureOverlay.Width / 2, TextureOverlay.Height), SpriteEffects.None, 0);
         }
 
         private bool IsInBlock(Vector2 point)

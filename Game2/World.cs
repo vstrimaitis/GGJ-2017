@@ -12,7 +12,8 @@ namespace Game2
         public Vector2 SunPosition;
         public List<Block> PlanetBlocks { get; } = new List<Block>();
         //public List<Entity> Entities { get; } = new List<Entity>();
-        public PlayerEntity Player;
+        public PlayerEntity Sheriff;
+        public PlayerEntity Thief;
         public List<Star> Stars { get; } = new List<Star>();
         public int PlanetRadius = 0;
     }

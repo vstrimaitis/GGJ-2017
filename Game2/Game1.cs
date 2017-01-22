@@ -13,7 +13,8 @@ namespace Game2
     /// </summary>
     public class Game1 : Game
     {
-        Vector2 BatteryPosition;
+        Vector2 Battery1Position;
+        Vector2 Battery2Position;
         Random Random = new Random();
         const int JumpDrainAmount = 10;
         public const int PlanetBlockSize = 5;
@@ -30,8 +31,6 @@ namespace Game2
         float _worldAngle = 0;
         float _backgroundAngle = 0;
         float _pulseTime = 0;
-
-        int _score = 0;
 
 
         Matrix _backgroundMatrix;
@@ -67,20 +66,7 @@ namespace Game2
             Resources.Pixel.SetData(new Color[] { Color.White });
 
             //_world.Entities.Add(new Entity(Vector2.Zero, new Vector2(1, 1), Vector2.Zero, _world));
-            _world.Player = new PlayerEntity(-Vector2.UnitY * 25, Vector2.Zero, _world);
-            _world.Player.OnDeath += (sender, args) =>
-            {
-                MediaPlayer.Stop();
-                System.Windows.Forms.MessageBox.Show("You ded man ;(");
-                this.Exit();
-            };
-
-            Star.OnCollision += (sender, args) =>
-            {
-                var hitStar = sender as Star;
-                _starsToDelete.Add(hitStar);
-                _score++;
-            };
+            
             base.Initialize();
         }
 
@@ -93,22 +79,24 @@ namespace Game2
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
             Resources.Planet = Content.Load<Texture2D>("planet");
-            Resources.Player = Content.Load<Texture2D>("player");
-            Resources.PlayerHat = Content.Load<Texture2D>("player_hat_overlay");
+            Resources.Sheriff = Content.Load<Texture2D>("player");
+            Resources.SheriffHat = Content.Load<Texture2D>("player_hat_overlay");
+            Resources.Thief = Content.Load<Texture2D>("thief");
+            Resources.ThiefHat = Content.Load<Texture2D>("thief_overlay");
             Resources.Stars = new Texture2D[] { Content.Load<Texture2D>("star_1"), Content.Load<Texture2D>("star_2") };
             Resources.BatteryOutline = Content.Load<Texture2D>("battery");
             Resources.BatteryFill = Content.Load<Texture2D>("battery_overlay");
             Resources.Sun = Content.Load<Texture2D>("sun");
             Resources.Background = new Texture2D(GraphicsDevice, 1, 1000);
 
-            Resources.BackgroundMusic = Content.Load<Song>("background_music");
+            Resources.BackgroundMusic = Content.Load<Song>("background_music_2");
             Resources.StarCollectSound = Content.Load<SoundEffect>("star_capture");
+            Resources.DeathSound = Content.Load<SoundEffect>("death_sound");
 
             Resources.Font = Content.Load<SpriteFont>("font");
          
             GenerateSkyGradient();
             LoadPlanetBlocks();
-            LoadPlayerBlocks();
 
             for (int i = 0; i < 20; i++)
             {
@@ -118,22 +106,59 @@ namespace Game2
 
 
             //BatteryPosition = new Vector2(10, _height - Graphics.BatteryOutline.Height - 500);
-            BatteryPosition = new Vector2(10, _height-Resources.BatteryOutline.Height*2-10);
-            
+            Battery1Position = new Vector2(10, _height - Resources.BatteryOutline.Height * 2 - 10);
+            Battery2Position = new Vector2(_width - Resources.BatteryOutline.Width * 2 - 10, _height - Resources.BatteryOutline.Height * 2 - 10);
+
+            _world.Sheriff = new PlayerEntity(-Vector2.UnitY * 25, Vector2.Zero, _world, 1/15f, 1/10f, Resources.Sheriff, Resources.SheriffHat);
+
+            _world.Thief = new PlayerEntity(Vector2.UnitY * 25, Vector2.Zero, _world, 1/20f, 1/5f, Resources.Thief, Resources.ThiefHat);
+
+            _world.Sheriff.OnDeath += (sender, args) =>
+            {
+                MediaPlayer.Stop();
+                Resources.DeathSound.Play();
+                System.Windows.Forms.MessageBox.Show("Thief wins!");
+                this.Exit();
+            };
+
+            _world.Thief.OnDeath += (sender, args) =>
+            {
+                MediaPlayer.Stop();
+                Resources.DeathSound.Play();
+                System.Windows.Forms.MessageBox.Show("Sheriff wins!");
+                this.Exit();
+            };
+
+            Star.OnCollision += (sender, args) =>
+            {
+                var hitStar = sender as Star;
+                var player = args as PlayerEntity;
+                _starsToDelete.Add(hitStar);
+                player.Score++;
+                Resources.StarCollectSound.Play();
+            };
+            LoadPlayerBlocks();
+
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Play(Resources.BackgroundMusic);
         }
 
         private void LoadPlayerBlocks()
         {
-            var colors1D = new Color[Resources.Player.Width * Resources.Player.Height];
-            Resources.Player.GetData(colors1D);
-            int startX = Resources.Player.Width, endX = 0, startY = Resources.Player.Height, endY = 0;
-            for (int xx = 0; xx < Resources.Player.Width; xx++)
+            LoadSheriffBlocks();
+            LoadThiefBlocks();   
+        }
+
+        private void LoadThiefBlocks()
+        {
+            var colors1D = new Color[Resources.Thief.Width * Resources.Thief.Height];
+            Resources.Thief.GetData(colors1D);
+            int startX = Resources.Thief.Width, endX = 0, startY = Resources.Thief.Height, endY = 0;
+            for (int xx = 0; xx < Resources.Thief.Width; xx++)
             {
-                for (int yy = 0; yy < Resources.Player.Height; yy++)
+                for (int yy = 0; yy < Resources.Thief.Height; yy++)
                 {
-                    var c = colors1D[xx + yy * Resources.Player.Width];
+                    var c = colors1D[xx + yy * Resources.Thief.Width];
                     if (c.A != 0)
                     {
                         startX = Math.Min(startX, xx);
@@ -143,20 +168,58 @@ namespace Game2
                     }
                 }
             }
-            _world.Player.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
-            for (int xx = 0; xx < Resources.Player.Width; xx++)
+            _world.Sheriff.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
+            for (int xx = 0; xx < Resources.Thief.Width; xx++)
             {
-                for (int yy = 0; yy < Resources.Player.Height; yy++)
+                for (int yy = 0; yy < Resources.Thief.Height; yy++)
                 {
-                    var c = colors1D[xx + yy * Resources.Player.Width];
+                    var c = colors1D[xx + yy * Resources.Thief.Width];
                     if (c.A != 0)
                     {
-                        var block = new Block((int)(xx + _world.Player.Position.X), (int)(yy + _world.Player.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
+                        var block = new Block((int)(xx + _world.Sheriff.Position.X), (int)(yy + _world.Sheriff.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
                         block.AbsolutePosition = block.Position;
                         block.Coordinates = new Vector2(xx - startX, yy - startY);
-                        _world.Player.Blocks.Add(block);
-                        if (xx == Resources.Player.Width / 2 && yy == Resources.Player.Height - 1)
-                            _world.Player.ReferenceBlock = block;
+                        _world.Sheriff.Blocks.Add(block);
+                        if (xx == Resources.Thief.Width / 2 && yy == Resources.Thief.Height - 1)
+                            _world.Sheriff.ReferenceBlock = block;
+                    }
+                }
+            }
+        }
+
+        private void LoadSheriffBlocks()
+        {
+            var colors1D = new Color[Resources.Sheriff.Width * Resources.Sheriff.Height];
+            Resources.Sheriff.GetData(colors1D);
+            int startX = Resources.Sheriff.Width, endX = 0, startY = Resources.Sheriff.Height, endY = 0;
+            for (int xx = 0; xx < Resources.Sheriff.Width; xx++)
+            {
+                for (int yy = 0; yy < Resources.Sheriff.Height; yy++)
+                {
+                    var c = colors1D[xx + yy * Resources.Sheriff.Width];
+                    if (c.A != 0)
+                    {
+                        startX = Math.Min(startX, xx);
+                        endX = Math.Max(endX, xx);
+                        startY = Math.Min(startY, yy);
+                        endY = Math.Max(endY, yy);
+                    }
+                }
+            }
+            _world.Sheriff.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
+            for (int xx = 0; xx < Resources.Sheriff.Width; xx++)
+            {
+                for (int yy = 0; yy < Resources.Sheriff.Height; yy++)
+                {
+                    var c = colors1D[xx + yy * Resources.Sheriff.Width];
+                    if (c.A != 0)
+                    {
+                        var block = new Block((int)(xx + _world.Sheriff.Position.X), (int)(yy + _world.Sheriff.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
+                        block.AbsolutePosition = block.Position;
+                        block.Coordinates = new Vector2(xx - startX, yy - startY);
+                        _world.Sheriff.Blocks.Add(block);
+                        if (xx == Resources.Sheriff.Width / 2 && yy == Resources.Sheriff.Height - 1)
+                            _world.Sheriff.ReferenceBlock = block;
                     }
                 }
             }
@@ -247,11 +310,17 @@ namespace Game2
 
         private void AddGravity()
         {
-            var g = -_world.Player.Position;
+            var g = -_world.Sheriff.Position;
             g.Normalize();
-            g *= (Gravity / _world.Player.Position.LengthSquared());
-            _world.Player.Velocity += g;
-            _world.Player.Update();
+            g *= (Gravity / _world.Sheriff.Position.LengthSquared());
+            _world.Sheriff.Velocity += g;
+            _world.Sheriff.Update();
+
+            g = -_world.Thief.Position;
+            g.Normalize();
+            g *= (Gravity / _world.Thief.Position.LengthSquared());
+            _world.Thief.Velocity += g;
+            _world.Thief.Update();
         }
 
         private void UpdateStars()
@@ -274,19 +343,33 @@ namespace Game2
 
         private void UpdateAbsolutePositions()
         {
-            foreach (var b in _world.Player.Blocks)
+            foreach (var b in _world.Sheriff.Blocks)
             {
-                float angle = (float)Math.Atan2(_world.Player.Position.Y, _world.Player.Position.X) + MathHelper.PiOver2;
-                var translationMatrix = Matrix.CreateTranslation(new Vector3(-_world.Player.Bounds.X / 2, -_world.Player.Bounds.Y, 0));
+                float angle = (float)Math.Atan2(_world.Sheriff.Position.Y, _world.Sheriff.Position.X) + MathHelper.PiOver2;
+                var translationMatrix = Matrix.CreateTranslation(new Vector3(-_world.Sheriff.Bounds.X / 2, -_world.Sheriff.Bounds.Y, 0));
                 var rotationMatrix = Matrix.CreateRotationZ(angle);
 
-                var t = Vector2.Transform(b.Position, rotationMatrix*translationMatrix);
-                var p = Vector2.Transform(_world.Player.ReferenceBlock.Position, rotationMatrix*translationMatrix);
+                var t = Vector2.Transform(b.Position, rotationMatrix * translationMatrix);
+                var p = Vector2.Transform(_world.Sheriff.ReferenceBlock.Position, rotationMatrix * translationMatrix);
                 var diff = t - p;
-                var tmp = _world.Player.Position*PlanetBlockSize + diff;
-                b.AbsolutePosition =  Vector2.Transform(tmp, _worldMatrix);
+                var tmp = _world.Sheriff.Position * PlanetBlockSize + diff;
+                b.AbsolutePosition = Vector2.Transform(tmp, _worldMatrix);
             }
-            _world.Player.AbsolutePosition = Vector2.Transform(_world.Player.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
+
+            foreach (var b in _world.Thief.Blocks)
+            {
+                float angle = (float)Math.Atan2(_world.Thief.Position.Y, _world.Thief.Position.X) + MathHelper.PiOver2;
+                var translationMatrix = Matrix.CreateTranslation(new Vector3(-_world.Thief.Bounds.X / 2, -_world.Thief.Bounds.Y, 0));
+                var rotationMatrix = Matrix.CreateRotationZ(angle);
+
+                var t = Vector2.Transform(b.Position, rotationMatrix * translationMatrix);
+                var p = Vector2.Transform(_world.Thief.ReferenceBlock.Position, rotationMatrix * translationMatrix);
+                var diff = t - p;
+                var tmp = _world.Thief.Position * PlanetBlockSize + diff;
+                b.AbsolutePosition = Vector2.Transform(tmp, _worldMatrix);
+            }
+            _world.Sheriff.AbsolutePosition = Vector2.Transform(_world.Sheriff.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
+            _world.Thief.AbsolutePosition = Vector2.Transform(_world.Thief.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
             foreach (var b in _world.PlanetBlocks)
                 b.AbsolutePosition = Vector2.Transform(b.Position * PlanetBlockSize, _worldMatrix);
             foreach (var s in _world.Stars)
@@ -299,22 +382,41 @@ namespace Game2
         {
             var state = Keyboard.GetState();
 
-            if (state.IsKeyDown(Keys.Left) && _world.Player.IsOnGround)
+            if (state.IsKeyDown(Keys.Left) && _world.Sheriff.IsOnGround)
             {
-                var v = _world.Player.Position;
+                var v = _world.Sheriff.Position;
                 var vv = new Vector2(v.Y, -v.X);
-                _world.Player.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Sheriff.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
             }
-            else if (state.IsKeyDown(Keys.Right) && _world.Player.IsOnGround)
+            else if (state.IsKeyDown(Keys.Right) && _world.Sheriff.IsOnGround)
             {
-                var v = _world.Player.Position;
+                var v = _world.Sheriff.Position;
                 var vv = new Vector2(-v.Y, v.X);
-                _world.Player.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Sheriff.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
             }
-            if (state.IsKeyDown(Keys.Up) && _world.Player.IsOnGround)
+            if (state.IsKeyDown(Keys.Up) && _world.Sheriff.IsOnGround)
             {
-                _world.Player.Velocity += _world.Player.Position / _world.Player.Position.Length() * PlayerJumpSpeed;
-                _world.Player.DrainPower(JumpDrainAmount);
+                _world.Sheriff.Velocity += _world.Sheriff.Position / _world.Sheriff.Position.Length() * PlayerJumpSpeed;
+                _world.Sheriff.DrainPower(JumpDrainAmount);
+            }
+
+
+            if (state.IsKeyDown(Keys.A) && _world.Thief.IsOnGround)
+            {
+                var v = _world.Thief.Position;
+                var vv = new Vector2(v.Y, -v.X);
+                _world.Thief.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+            }
+            else if (state.IsKeyDown(Keys.D) && _world.Thief.IsOnGround)
+            {
+                var v = _world.Thief.Position;
+                var vv = new Vector2(-v.Y, v.X);
+                _world.Thief.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+            }
+            if (state.IsKeyDown(Keys.W) && _world.Thief.IsOnGround)
+            {
+                _world.Thief.Velocity += _world.Thief.Position / _world.Thief.Position.Length() * PlayerJumpSpeed;
+                _world.Thief.DrainPower(JumpDrainAmount);
             }
         }
 
@@ -345,10 +447,10 @@ namespace Game2
             DrawBackground();
             DrawStars();
             DrawWorld();
-            DrawBattery();
+            DrawBatteries();
             DrawScore();
             //DrawDebugBlocks();
-            
+
             base.Draw(gameTime);
         }
 
@@ -362,17 +464,17 @@ namespace Game2
                 foreach (var b in s.Blocks)
                     spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Pink);
 
-            foreach (var b in _world.Player.Blocks)
+            foreach (var b in _world.Sheriff.Blocks)
                 spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 5,5), Color.Black);
-            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.ReferenceBlock.AbsolutePosition.X, (int)_world.Player.ReferenceBlock.AbsolutePosition.Y, 5,5), Color.Red);
-            var abs = Vector2.Transform(_world.Player.Position, _worldMatrix);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Sheriff.ReferenceBlock.AbsolutePosition.X, (int)_world.Sheriff.ReferenceBlock.AbsolutePosition.Y, 5,5), Color.Red);
+            var abs = Vector2.Transform(_world.Sheriff.Position, _worldMatrix);
             spriteBatch.Draw(Resources.Pixel, new Rectangle((int)abs.X, (int)abs.Y, 5, 5), Color.Blue);
 
 
-            foreach (var b in _world.Player.Blocks)
+            foreach (var b in _world.Sheriff.Blocks)
                 spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.Position.X, (int)b.Position.Y, 5, 5), Color.Black);
-            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.ReferenceBlock.Position.X, (int)_world.Player.ReferenceBlock.Position.Y, 5, 5), Color.Red);
-            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.Position.X, (int)_world.Player.Position.Y, 5, 5), Color.Blue);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Sheriff.ReferenceBlock.Position.X, (int)_world.Sheriff.ReferenceBlock.Position.Y, 5, 5), Color.Red);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Sheriff.Position.X, (int)_world.Sheriff.Position.Y, 5, 5), Color.Blue);
 
             spriteBatch.Draw(Resources.Pixel, new Rectangle(0, 0, 10, 10), Color.Pink);
             var worldAbs = Vector2.Transform(Vector2.Zero, _worldMatrix);
@@ -401,7 +503,8 @@ namespace Game2
             int sunX = (int)(_world.SunPosition.X * (_world.PlanetRadius));
             int sunY = (int)(_world.SunPosition.Y * (_world.PlanetRadius));
             spriteBatch.Draw(Resources.Sun, new Rectangle(sunX, sunY, Resources.Sun.Width * 2, Resources.Sun.Height * 2), Color.White);
-            _world.Player.Draw(spriteBatch);
+            _world.Sheriff.Draw(spriteBatch);
+            _world.Thief.Draw(spriteBatch);
             spriteBatch.End();
         }
 
@@ -416,16 +519,35 @@ namespace Game2
 
         private void DrawScore()
         {
-            Rectangle boundaries = new Rectangle(10 + Resources.BatteryOutline.Width * 2 + 20,
-                                                 _height - Resources.BatteryOutline.Height*2 - 10,
-                                                 50,
-                                                 Resources.BatteryOutline.Height*2);
+            Rectangle sheriffScoreBoundaries = new Rectangle(10 + Resources.BatteryOutline.Width * 2 + 20,
+                                                             _height - Resources.BatteryOutline.Height * 2 - 10,
+                                                             50,
+                                                             Resources.BatteryOutline.Height * 2);
+
+            Rectangle sheriffTitleBoundaries = new Rectangle(10,
+                                                             _height - Resources.BatteryOutline.Height * 2 - 10 - 50,
+                                                             150,
+                                                             50);
+
+            Rectangle thiefScoreBoundaries = new Rectangle(_width - 10 - Resources.BatteryOutline.Width * 2 - 20 - 50,
+                                                           _height - Resources.BatteryOutline.Height * 2 - 10,
+                                                           50,
+                                                           Resources.BatteryOutline.Height * 2);
+
+            Rectangle thiefTitleBoundaries = new Rectangle(_width-160,
+                                                           _height - Resources.BatteryOutline.Height * 2 - 10 - 50,
+                                                           150,
+                                                           50);
             spriteBatch.Begin();
-            DrawString(Resources.Font, _score.ToString(), boundaries);
+
+            DrawString(Resources.Font, _world.Sheriff.Score.ToString(), sheriffScoreBoundaries, Resources.FontColor);
+            DrawString(Resources.Font, _world.Thief.Score.ToString(), thiefScoreBoundaries, Resources.FontColor);
+            DrawString(Resources.Font, "Sheriff".ToUpper(), sheriffTitleBoundaries, Resources.FontColor);
+            DrawString(Resources.Font, "Thief".ToUpper(), thiefTitleBoundaries, Resources.FontColor);
             spriteBatch.End();
         }
 
-        private void DrawString(SpriteFont font, string strToDraw, Rectangle boundaries)
+        private void DrawString(SpriteFont font, string strToDraw, Rectangle boundaries, Color color)
         {
             Vector2 size = font.MeasureString(strToDraw);
 
@@ -445,17 +567,24 @@ namespace Game2
             float spriteLayer = 0.0f;
             SpriteEffects spriteEffects = new SpriteEffects();
             
-            spriteBatch.DrawString(font, strToDraw, position, Color.White, rotation, spriteOrigin, scale, spriteEffects, spriteLayer);
+            spriteBatch.DrawString(font, strToDraw, position, color, rotation, spriteOrigin, scale, spriteEffects, spriteLayer);
         }
 
-        private void DrawBattery()
+        private void DrawBatteries()
         {
-            var percentage = _world.Player.Power / 100;
-            var color = GraphicsHelper.Interpolate(Color.Red, new Color(0, 255, 0), percentage);
-            var length = Resources.BatteryFill.Width * percentage;
+            var percentage1 = _world.Sheriff.Power / 100;
+            var color1 = GraphicsHelper.Interpolate(Color.Red, new Color(0, 255, 0), percentage1);
+            var length1 = Resources.BatteryFill.Width * percentage1;
+
+            var percentage2 = _world.Thief.Power / 100;
+            var color2 = GraphicsHelper.Interpolate(Color.Red, new Color(0, 255, 0), percentage2);
+            var length2 = Resources.BatteryFill.Width * percentage2;
             spriteBatch.Begin(transformMatrix: Matrix.CreateScale(2));
-            spriteBatch.Draw(Resources.BatteryOutline, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, Resources.BatteryOutline.Width, Resources.BatteryOutline.Height), Color.White);
-            spriteBatch.Draw(Resources.BatteryFill, new Rectangle((int)BatteryPosition.X / 2, (int)BatteryPosition.Y / 2, (int)(Resources.BatteryFill.Width * percentage), Resources.BatteryFill.Height), color);
+            spriteBatch.Draw(Resources.BatteryOutline, new Rectangle((int)Battery1Position.X / 2, (int)Battery1Position.Y / 2, Resources.BatteryOutline.Width, Resources.BatteryOutline.Height), Color.White);
+            spriteBatch.Draw(Resources.BatteryFill, new Rectangle((int)Battery1Position.X / 2, (int)Battery1Position.Y / 2, (int)(Resources.BatteryFill.Width * percentage1), Resources.BatteryFill.Height), color1);
+
+            spriteBatch.Draw(Resources.BatteryOutline, new Rectangle((int)Battery2Position.X / 2, (int)Battery2Position.Y / 2, Resources.BatteryOutline.Width, Resources.BatteryOutline.Height), Color.White);
+            spriteBatch.Draw(Resources.BatteryFill, new Rectangle((int)Battery2Position.X / 2, (int)Battery2Position.Y / 2, (int)(Resources.BatteryFill.Width * percentage2), Resources.BatteryFill.Height), color2);
             spriteBatch.End();
         }
         #endregion

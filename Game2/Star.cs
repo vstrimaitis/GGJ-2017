@@ -12,7 +12,7 @@ namespace Game2
         public Vector2 Position;
         public float Visibility;
 
-        public static event EventHandler OnCollision;
+        public static event EventHandler<PlayerEntity> OnCollision;
 
         private Vector2 _size = Vector2.Zero;
 
@@ -55,14 +55,25 @@ namespace Game2
         public void Update()
         {
             int totalVisible = 0;
-            bool collides = false;
             foreach(var b in Blocks)
                 if (!Game1.IsLit(b.Position, World.SunPosition))
                     totalVisible++;
             Visibility = (float)totalVisible / Blocks.Count;
-            foreach(var b in Blocks)
+
+            if (CheckPlayer(World.Sheriff))
+                return;
+
+
+            if (CheckPlayer(World.Thief))
+                return;
+        }
+
+        private bool CheckPlayer(PlayerEntity p)
+        {
+            bool collides = false;
+            foreach (var b in Blocks)
             {
-                var dist = (b.AbsolutePosition - World.Player.AbsolutePosition).Length();
+                var dist = (b.AbsolutePosition - p.AbsolutePosition).Length();
                 if (dist < Game1.CollisionDistance)
                 {
                     collides = true;
@@ -70,10 +81,12 @@ namespace Game2
                 }
             }
 
-            if(collides && Visibility >= Game1.StarVisibilityThreshold)
+            if (collides && Visibility >= Game1.StarVisibilityThreshold)
             {
-                OnCollision?.Invoke(this, EventArgs.Empty);
+                OnCollision?.Invoke(this, p);
+                return true;
             }
+            return false;
         }
 
         public bool Intersects(Star other)
