@@ -19,16 +19,11 @@ namespace Game2
         public Vector2 AbsolutePosition;
         public Vector2 Coordinates;
 
-        public Rectangle BoundingBox
-        {
-            get
-            {
-                return new Rectangle((int)AbsolutePosition.X, (int)AbsolutePosition.Y, Size, Size);
-            }
-        }
+        public Rectangle BoundingBox;
 
         public Block(int x, int y, int size, BlockType type, Color color)
         {
+            BoundingBox = new Rectangle(x, y, Size, Size);
             Type = type;
             Position = new Vector2(x, y);
             Color = color;
@@ -37,6 +32,8 @@ namespace Game2
 
         public void Draw(SpriteBatch sb, float dist = 0, bool modifyAlpha = false)
         {
+            BoundingBox.X = (int)AbsolutePosition.X;
+            BoundingBox.Y = (int)AbsolutePosition.Y;
             var color = Color;
             if (!modifyAlpha)
                 color = GraphicsHelper.Modify(color, dist);

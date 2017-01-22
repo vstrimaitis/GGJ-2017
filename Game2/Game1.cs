@@ -112,7 +112,7 @@ namespace Game2
 
             _world.Sheriff = new PlayerEntity(-Vector2.UnitY * 25, Vector2.Zero, _world, 1/15f, 1/10f, Resources.Sheriff, Resources.SheriffHat);
 
-            _world.Thief = new PlayerEntity(Vector2.UnitY * 25, Vector2.Zero, _world, 1/20f, 1/5f, Resources.Thief, Resources.ThiefHat);
+            _world.Thief = new PlayerEntity(Vector2.UnitY * 25, Vector2.Zero, _world, 1/20f, 1/5f, Resources.Thief, Resources.ThiefHat, Direction.Right);
 
             _world.Sheriff.OnDeath += (sender, args) =>
             {
@@ -169,7 +169,7 @@ namespace Game2
                     }
                 }
             }
-            _world.Sheriff.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
+            _world.Thief.Bounds = new Vector2(endX - startX + 1, endY - startY + 1);
             for (int xx = 0; xx < Resources.Thief.Width; xx++)
             {
                 for (int yy = 0; yy < Resources.Thief.Height; yy++)
@@ -177,12 +177,12 @@ namespace Game2
                     var c = colors1D[xx + yy * Resources.Thief.Width];
                     if (c.A != 0)
                     {
-                        var block = new Block((int)(xx + _world.Sheriff.Position.X), (int)(yy + _world.Sheriff.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
+                        var block = new Block((int)(xx + _world.Thief.Position.X), (int)(yy + _world.Thief.Position.Y), PlayerEntity.BlockSize, BlockType.Player, c);
                         block.AbsolutePosition = block.Position;
                         block.Coordinates = new Vector2(xx - startX, yy - startY);
-                        _world.Sheriff.Blocks.Add(block);
+                        _world.Thief.Blocks.Add(block);
                         if (xx == Resources.Thief.Width / 2 && yy == Resources.Thief.Height - 1)
-                            _world.Sheriff.ReferenceBlock = block;
+                            _world.Thief.ReferenceBlock = block;
                     }
                 }
             }
@@ -273,8 +273,7 @@ namespace Game2
                     }
                 }
             }
-
-            //_world.PlanetRadius = (int)(Math.Max(endX - startX + 1, endY - startY + 1) * 2.4f * PlanetBlockSize / 2) ;
+            
             _world.PlanetRadius = (int)(Math.Max(endX - startX + 1, endY - startY + 1) / 2 * PlanetBlockSize*2.5f) ;
 
         }
@@ -306,6 +305,10 @@ namespace Game2
             UpdateAbsolutePositions();
             UpdateStars();
             AddGravity();
+            if (_world.Sheriff.Intersects(_world.Thief))
+            {
+                _world.Sheriff.Score--;
+            }
             base.Update(gameTime);
         }
 
@@ -344,6 +347,8 @@ namespace Game2
 
         private void UpdateAbsolutePositions()
         {
+            float x = 0, y = 0;
+            int n = 0;
             foreach (var b in _world.Sheriff.Blocks)
             {
                 float angle = (float)Math.Atan2(_world.Sheriff.Position.Y, _world.Sheriff.Position.X) + MathHelper.PiOver2;
@@ -355,8 +360,14 @@ namespace Game2
                 var diff = t - p;
                 var tmp = _world.Sheriff.Position * PlanetBlockSize + diff;
                 b.AbsolutePosition = Vector2.Transform(tmp, _worldMatrix);
+                x += b.AbsolutePosition.X;
+                y += b.AbsolutePosition.Y;
+                n++;
             }
+            _world.Sheriff.AbsoluteCenter.X = x / n;
+            _world.Sheriff.AbsoluteCenter.Y = y / n;
 
+            x = y = n = 0;
             foreach (var b in _world.Thief.Blocks)
             {
                 float angle = (float)Math.Atan2(_world.Thief.Position.Y, _world.Thief.Position.X) + MathHelper.PiOver2;
@@ -368,7 +379,13 @@ namespace Game2
                 var diff = t - p;
                 var tmp = _world.Thief.Position * PlanetBlockSize + diff;
                 b.AbsolutePosition = Vector2.Transform(tmp, _worldMatrix);
+                x += b.AbsolutePosition.X;
+                y += b.AbsolutePosition.Y;
+                n++;
             }
+            _world.Thief.AbsoluteCenter.X = x / n;
+            _world.Thief.AbsoluteCenter.Y = y / n;
+
             _world.Sheriff.AbsolutePosition = Vector2.Transform(_world.Sheriff.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
             _world.Thief.AbsolutePosition = Vector2.Transform(_world.Thief.Position * PlayerEntity.BlockSize, _worldMatrix); // transform to absolute coordinates
             foreach (var b in _world.PlanetBlocks)
@@ -388,12 +405,14 @@ namespace Game2
                 var v = _world.Sheriff.Position;
                 var vv = new Vector2(v.Y, -v.X);
                 _world.Sheriff.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Sheriff.Direction = Direction.Left;
             }
             else if (state.IsKeyDown(Keys.Right) && _world.Sheriff.IsOnGround)
             {
                 var v = _world.Sheriff.Position;
                 var vv = new Vector2(-v.Y, v.X);
                 _world.Sheriff.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Sheriff.Direction = Direction.Right;
             }
             if (state.IsKeyDown(Keys.Up) && _world.Sheriff.IsOnGround)
             {
@@ -408,12 +427,14 @@ namespace Game2
                 var v = _world.Thief.Position;
                 var vv = new Vector2(v.Y, -v.X);
                 _world.Thief.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Thief.Direction = Direction.Left;
             }
             else if (state.IsKeyDown(Keys.D) && _world.Thief.IsOnGround)
             {
                 var v = _world.Thief.Position;
                 var vv = new Vector2(-v.Y, v.X);
                 _world.Thief.Velocity += vv / v.Length() * PlayerHorizontalSpeed;
+                _world.Thief.Direction = Direction.Right;
             }
             if (state.IsKeyDown(Keys.W) && _world.Thief.IsOnGround)
             {
@@ -472,6 +493,13 @@ namespace Game2
             spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Sheriff.ReferenceBlock.AbsolutePosition.X, (int)_world.Sheriff.ReferenceBlock.AbsolutePosition.Y, 5,5), Color.Red);
             var abs = Vector2.Transform(_world.Sheriff.Position, _worldMatrix);
             spriteBatch.Draw(Resources.Pixel, new Rectangle((int)abs.X, (int)abs.Y, 5, 5), Color.Blue);
+
+            abs = _world.Sheriff.AbsoluteCenter;// Vector2.Transform(_world.Sheriff.CenterPosition, _worldMatrix);
+            int w = (int)_world.Sheriff.Bounds.X;
+            int h = (int)_world.Sheriff.Bounds.Y;
+            abs = Vector2.Transform(abs, Matrix.CreateTranslation(new Vector3(-w/2, -h/2, 0)));
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)abs.X, (int)abs.Y, 5, 5), Color.Green);
+            spriteBatch.Draw(Resources.Pixel, new Rectangle((int)abs.X, (int)abs.Y, w, h), Color.Green);
 
 
             foreach (var b in _world.Sheriff.Blocks)

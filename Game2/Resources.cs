@@ -14,7 +14,7 @@ namespace Game2
     {
         public static Color LightSky = new Color(214, 224, 255);
         public static Color DarkSky = new Color(2, 6, 53);
-        public static Color FontColor = new Color(254, 255, 196);
+        public static Color FontColor = new Color(76, 117, 83);
 
         public static Texture2D Pixel;
         public static Texture2D Planet;
