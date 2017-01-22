@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Game2
 {
@@ -31,6 +32,11 @@ namespace Game2
         float _worldAngle = 0;
         float _backgroundAngle = 0;
         float _pulseTime = 0;
+
+        float stabCooldown = 1000f;
+        Stopwatch stabTimer = null;
+        int stabPowerChange = 10;
+        int stabStarCountChange = 1;
 
 
         Matrix _backgroundMatrix;
@@ -305,10 +311,22 @@ namespace Game2
             UpdateAbsolutePositions();
             UpdateStars();
             AddGravity();
-            if (_world.Sheriff.Intersects(_world.Thief))
+            if (stabTimer == null && _world.Sheriff.Intersects(_world.Thief))
             {
-                _world.Sheriff.Score--;
+                if(_world.Sheriff.Score >= stabStarCountChange)
+                {
+                    _world.Sheriff.Score -= stabStarCountChange;
+                    _world.Thief.Score += stabStarCountChange;
+                }
+                else
+                {
+                    _world.Sheriff.Power = Math.Max(_world.Sheriff.Power - stabPowerChange, 0);
+                    _world.Thief.Power = Math.Min(_world.Thief.Power + stabPowerChange, 100);
+                }
+                stabTimer = Stopwatch.StartNew();
             }
+            if (stabTimer != null && stabTimer.ElapsedMilliseconds >= stabCooldown)
+                stabTimer = null;
             base.Update(gameTime);
         }
 
@@ -481,7 +499,6 @@ namespace Game2
         private void DrawDebugBlocks()
         {
             spriteBatch.Begin();
-            //spriteBatch.Draw(Resources.Pixel, new Rectangle((int)_world.Player.AbsolutePosition.X, (int)_world.Player.AbsolutePosition.Y, 10, 10), Color.Red);
             foreach (var b in _world.PlanetBlocks)
                 spriteBatch.Draw(Resources.Pixel, new Rectangle((int)b.AbsolutePosition.X, (int)b.AbsolutePosition.Y, 10, 10), Color.Yellow);
             foreach(var s in _world.Stars)

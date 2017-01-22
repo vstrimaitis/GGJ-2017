@@ -27,7 +27,7 @@ namespace Game2
         public Texture2D Texture;
         public Texture2D TextureOverlay;
         public bool IsOnGround { get; private set; }
-        public float Power { get; private set; } = 100;
+        public float Power = 100;
         public int Score;
 
         public List<Block> Blocks { get; } = new List<Block>();
