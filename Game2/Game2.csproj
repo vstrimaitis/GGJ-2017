@@ -39,6 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Block.cs" />
+    <Compile Include="GraphicsHelper.cs" />
     <Compile Include="PlayerEntity.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Resources.cs" />

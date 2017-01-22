@@ -18,6 +18,14 @@ namespace Game2
         public Vector2 Position { get; private set; }
         public Vector2 AbsolutePosition;
 
+        public Rectangle BoundingBox
+        {
+            get
+            {
+                return new Rectangle((int)AbsolutePosition.X, (int)AbsolutePosition.Y, Size, Size);
+            }
+        }
+
         public Block(int x, int y, int size, BlockType type, Color color)
         {
             Type = type;
@@ -30,9 +38,9 @@ namespace Game2
         {
             var color = Color;
             if (!modifyAlpha)
-                color = Resources.Modify(color, dist);
+                color = GraphicsHelper.Modify(color, dist);
             else
-                color = Resources.ModifyAlpha(color, dist);
+                color = GraphicsHelper.ModifyAlpha(color, dist);
             sb.Draw(Resources.Pixel, new Rectangle((int)(Position.X * Size), (int)(Position.Y * Size), Size, Size), color);
         }
 

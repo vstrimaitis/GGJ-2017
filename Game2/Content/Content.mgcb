@@ -145,3 +145,9 @@
 /processorParam:Quality=Best
 /build:star_capture.wav
 
+#begin font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:TextureFormat=Compressed
+/build:font.spritefont
+

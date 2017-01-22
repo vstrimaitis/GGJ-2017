@@ -10,8 +10,19 @@ namespace Game2
         public World World;
         public List<Block> Blocks { get; } = new List<Block>();
         public Vector2 Position;
+        public float Visibility;
 
         public static event EventHandler OnCollision;
+
+        private Vector2 _size = Vector2.Zero;
+
+        public Rectangle BoundingBox
+        {
+            get
+            {
+                return new Rectangle((int)Position.X, (int)Position.Y, (int)_size.X, (int)_size.Y);
+            }
+        }
 
         public Star(int x, int y, Texture2D texture, World world)
         {
@@ -19,35 +30,55 @@ namespace Game2
             Position = new Vector2(x, y);
             var colors1D = new Color[texture.Width * texture.Height];
             texture.GetData(colors1D);
+            int startX = texture.Width, endX = 0, startY = texture.Height, endY = 0;
             for (int xx = 0; xx < texture.Width; xx++)
             {
                 for (int yy = 0; yy < texture.Height; yy++)
                 {
-                    var c = colors1D[xx + yy * texture.Width]; ;
+                    var c = colors1D[xx + yy * texture.Width];
+                    var block = new Block((int)(xx + Position.X), (int)(yy + Position.Y), Game1.StarBlockSize, BlockType.Star, c);
+                    block.AbsolutePosition = block.Position;
                     if (c.A != 0)
-                        Blocks.Add(new Block((int)(xx + Position.X), (int)(yy + Position.Y), Game1.StarBlockSize, BlockType.Star, c));
+                    {
+                        startX = Math.Min(startX, xx);
+                        endX = Math.Max(endX, xx);
+                        startY = Math.Min(startY, yy);
+                        endY = Math.Max(endY, yy);
+                        Blocks.Add(block);
+                    }
                 }
             }
+            _size.X = endX - startX + 1;
+            _size.Y = endY - startY + 1;
         }
 
         public void Update()
         {
+            int totalVisible = 0;
+            bool collides = false;
+            foreach(var b in Blocks)
+                if (!Game1.IsLit(b.Position, World.SunPosition))
+                    totalVisible++;
+            Visibility = (float)totalVisible / Blocks.Count;
             foreach(var b in Blocks)
             {
                 var dist = (b.AbsolutePosition - World.Player.AbsolutePosition).Length();
-                if (dist < 50)
+                if (dist < Game1.CollisionDistance)
                 {
-                    OnCollision?.Invoke(this, EventArgs.Empty);
-                    Console.WriteLine(dist);
-                    return;
+                    collides = true;
+                    break;
                 }
-                /*if (b.BoundingBox.Intersects(World.Player.BoundingBox))
-                {
-                    OnCollision?.Invoke(this, EventArgs.Empty);
-                    return;
-                }*/
-
             }
+
+            if(collides && Visibility >= Game1.StarVisibilityThreshold)
+            {
+                OnCollision?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        public bool Intersects(Star other)
+        {
+            return BoundingBox.Intersects(other.BoundingBox);
         }
 
         public void Draw(SpriteBatch sb)

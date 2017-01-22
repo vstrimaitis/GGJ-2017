@@ -32,7 +32,7 @@ namespace Game2
         {
             Position = pos;
             //Size = size;
-            Size = new Vector2(5, 5);
+            Size = new Vector2(10,10);
             Velocity = vel;
             World = world;
         }
@@ -44,7 +44,7 @@ namespace Game2
             float angle = (float)Math.Atan2(Position.Y, Position.X) + MathHelper.PiOver2;
             sb.Draw(Resources.Player, rect, null, Color.White, angle, new Vector2(Resources.Player.Width/2, Resources.Player.Height), SpriteEffects.None, 0);
 
-            var color = Resources.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
+            var color = GraphicsHelper.Interpolate(Color.Red, new Color(0, 255, 0), Power / 100);
             sb.Draw(Resources.PlayerHat, rect, null, color, angle, new Vector2(Resources.Player.Width / 2, Resources.Player.Height), SpriteEffects.None, 0);
         }
 
