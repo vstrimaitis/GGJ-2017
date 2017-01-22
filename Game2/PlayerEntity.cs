@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Game2.Windows;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace Game2
     class PlayerEntity
     {
         public Direction Direction;
-        public const int BlockSize = Game1.PlanetBlockSize;
+        public const int BlockSize = GameplayWindow.PlanetBlockSize;
         float ChargeSpeed;
         float DischargeSpeed;
         public World World { get; }
@@ -112,7 +113,7 @@ namespace Game2
 
             foreach (var b in Blocks)
                 b.Position = Position + b.Coordinates;
-            if (Game1.IsLit(Position, World.SunPosition))
+            if (GameplayWindow.IsLit(Position, World.SunPosition))
                 Power = MathHelper.Min(Power + ChargeSpeed, 100);
             else
                 Power = MathHelper.Max(Power - DischargeSpeed, 0);

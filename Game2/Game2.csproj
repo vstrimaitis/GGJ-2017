@@ -40,6 +40,10 @@
   <ItemGroup>
     <Compile Include="Block.cs" />
     <Compile Include="GraphicsHelper.cs" />
+    <Compile Include="Windows\GameoverWindow.cs" />
+    <Compile Include="Windows\GameplayWindow.cs" />
+    <Compile Include="Windows\IWindow.cs" />
+    <Compile Include="Windows\MenuWindow.cs" />
     <Compile Include="PlayerEntity.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Resources.cs" />

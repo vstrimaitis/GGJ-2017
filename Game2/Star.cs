@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Game2.Windows;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace Game2
                 for (int yy = 0; yy < texture.Height; yy++)
                 {
                     var c = colors1D[xx + yy * texture.Width];
-                    var block = new Block((int)(xx + Position.X), (int)(yy + Position.Y), Game1.StarBlockSize, BlockType.Star, c);
+                    var block = new Block((int)(xx + Position.X), (int)(yy + Position.Y), GameplayWindow.StarBlockSize, BlockType.Star, c);
                     block.AbsolutePosition = block.Position;
                     if (c.A != 0)
                     {
@@ -56,7 +57,7 @@ namespace Game2
         {
             int totalVisible = 0;
             foreach(var b in Blocks)
-                if (!Game1.IsLit(b.Position, World.SunPosition))
+                if (!GameplayWindow.IsLit(b.Position, World.SunPosition))
                     totalVisible++;
             Visibility = (float)totalVisible / Blocks.Count;
 
@@ -74,14 +75,14 @@ namespace Game2
             foreach (var b in Blocks)
             {
                 var dist = (b.AbsolutePosition - p.AbsolutePosition).Length();
-                if (dist < Game1.CollisionDistance)
+                if (dist < GameplayWindow.CollisionDistance)
                 {
                     collides = true;
                     break;
                 }
             }
 
-            if (collides && Visibility >= Game1.StarVisibilityThreshold)
+            if (collides && Visibility >= GameplayWindow.StarVisibilityThreshold)
             {
                 OnCollision?.Invoke(this, p);
                 return true;
@@ -98,7 +99,7 @@ namespace Game2
         {
             foreach(var b in Blocks)
             {
-                if(!Game1.IsLit(b.Position, World.SunPosition))
+                if(!GameplayWindow.IsLit(b.Position, World.SunPosition))
                     b.Draw(sb, b.Position.Dot(World.SunPosition) * 0.01f, modifyAlpha: true);
             }
         }
