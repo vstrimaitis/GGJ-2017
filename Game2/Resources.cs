@@ -31,6 +31,7 @@ namespace Game2
         public static Song BackgroundMusic;
         public static SoundEffect StarCollectSound;
         public static SoundEffect DeathSound;
+        public static SoundEffect JumpSound;
 
         public static SpriteFont Font;
     }

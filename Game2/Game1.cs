@@ -92,6 +92,7 @@ namespace Game2
             Resources.BackgroundMusic = Content.Load<Song>("background_music_2");
             Resources.StarCollectSound = Content.Load<SoundEffect>("star_capture");
             Resources.DeathSound = Content.Load<SoundEffect>("death_sound");
+            Resources.JumpSound = Content.Load<SoundEffect>("jump");
 
             Resources.Font = Content.Load<SpriteFont>("font");
          
@@ -398,6 +399,7 @@ namespace Game2
             {
                 _world.Sheriff.Velocity += _world.Sheriff.Position / _world.Sheriff.Position.Length() * PlayerJumpSpeed;
                 _world.Sheriff.DrainPower(JumpDrainAmount);
+                Resources.JumpSound.Play();
             }
 
 
@@ -417,6 +419,7 @@ namespace Game2
             {
                 _world.Thief.Velocity += _world.Thief.Position / _world.Thief.Position.Length() * PlayerJumpSpeed;
                 _world.Thief.DrainPower(JumpDrainAmount);
+                Resources.JumpSound.Play();
             }
         }
 
